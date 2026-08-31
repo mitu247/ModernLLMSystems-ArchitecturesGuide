@@ -411,28 +411,40 @@ $$
 GPTQ quantizes weight matrices column-by-column while continuously compensating unquantized weights for the introduced quantization error.
 
 1. **Objective Function:**
+   GPTQ seeks quantized weights $\hat{W}$ that minimize the output reconstruction error:
+
    $$
-   \arg\min_{\widehat{W}} \| W X - \widehat{W} X \|_2^2
+   \min_{\hat{W}} \| W X - \hat{W} X \|_2^2
    $$
 
 2. **Second-Order Taylor Series Expansion:**
-   Let $\Delta W = \widehat{W} - W$. The change in squared output error is:
+   Let the quantization perturbation be defined as $\Delta W = \hat{W} - W$. Expanding the loss function around pre-trained weights $W$:
+
    $$
-   \Delta \mathcal{L} \approx \nabla_W \mathcal{L}^T \Delta W + \frac{1}{2} \Delta W^T H \Delta W
+   \Delta \mathcal{L} \approx (\nabla_W \mathcal{L})^T \Delta W + \frac{1}{2} \Delta W^T H \Delta W
    $$
-   At the local minimum of pre-trained weights, $\nabla_W \mathcal{L} \approx 0$. The Hessian matrix with respect to weights is:
+
+   Since the pre-trained weights are already at a local minimum, the first-order gradient vanishes ($\nabla_W \mathcal{L} \approx 0$). The Hessian matrix $H$ with respect to the weights is:
+
    $$
    H = 2 X X^T
    $$
 
 3. **Optimal Weight Compensation via Inverse Hessian:**
-   When column $q$ is quantized ($W_{:, q} \to \widehat{W}_{:, q}$), the quantization error is $E_q = W_{:, q} - \widehat{W}_{:, q}$. To minimize $\Delta \mathcal{L}$, all remaining unquantized columns $j > q$ are updated by:
+   When column $q$ is quantized ($W_q \to \hat{W}_q$), the quantization error is $E_q = W_q - \hat{W}_q$. To minimize total error $\Delta \mathcal{L}$, all remaining unquantized columns $j > q$ are updated by:
+
    $$
-   W_{:, j} \leftarrow W_{:, j} - \frac{E_q \cdot [H^{-1}]_{q, j}}{[H^{-1}]_{q, q}}
+   W_j \leftarrow W_j - \frac{E_q \cdot [H^{-1}]_{q, j}}{[H^{-1}]_{q, q}}
    $$
 
-4. **Cholesky Decomposition ($H^{-1} = L L^T$):**
-   GPTQ adds a diagonal damping term $\lambda I$ (where $\lambda \approx 0.01 \cdot \text{mean}(\text{diag}(H))$) to ensure numerical stability and computes the Cholesky factor $L$ once, eliminating matrix inversion during runtime.
+4. **Cholesky Decomposition:**
+   Computing full matrix inverses repeatedly is computationally unstable. GPTQ factorizes the inverse Hessian using Cholesky decomposition:
+
+   $$
+   H^{-1} = L L^T
+   $$
+
+   A small diagonal damping term $\lambda I$ (where $\lambda \approx 0.01 \cdot \text{mean}(\text{diag}(H))$) is added to $H$ to guarantee positive-definiteness and numerical stability.
 
 #### 2.5.2 GGUF & K-Quants: Hierarchical Block-Wise Scaling
 
