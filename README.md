@@ -203,24 +203,24 @@ $$
 I_{\text{knee}} = \frac{P_{\text{peak}}}{\text{Bandwidth}_{\text{HBM}}}
 $$
 
-For an NVIDIA H100 SXM GPU ($P_{\text{peak}} = 989\text{ TFLOPs}$ in BF16 Tensor Core, $\text{Bandwidth}_{\text{HBM}} = 3.35\text{ TB/s}$):
+For an NVIDIA H100 SXM GPU with peak compute of 989 TFLOPs (BF16 Tensor Core) and HBM bandwidth of 3.35 TB/s:
 
 $$
 I_{\text{knee}} = \frac{989 \times 10^{12}\text{ FLOPs/s}}{3.35 \times 10^{12}\text{ Bytes/s}} \approx \mathbf{295.2\text{ FLOPs/Byte}}
 $$
 
-- **Memory-Bound Regime ($I < 295.2\text{ FLOPs/Byte}$):** Any kernel that performs fewer than $295.2$ calculations per byte loaded from memory (e.g., LayerNorm, Softmax, single-token autoregressive decoding) leaves Tensor Cores idle while waiting on memory buses.
-- **Compute-Bound Regime ($I > 295.2\text{ FLOPs/Byte}$):** Kernels with high data reuse (e.g., large GEMMs during prompt prefill) fully saturate Tensor Core compute units.
+- **Memory-Bound Regime (I < 295.2 FLOPs/Byte):** Any kernel that performs fewer than 295.2 calculations per byte loaded from memory (e.g., LayerNorm, Softmax, single-token autoregressive decoding) leaves Tensor Cores idle while waiting on memory buses.
+- **Compute-Bound Regime (I > 295.2 FLOPs/Byte):** Kernels with high data reuse (e.g., large GEMMs during prompt prefill) fully saturate Tensor Core compute units.
 
 ---
 
 ## 2. Module I: Numerical Precision, Arithmetic & Model Quantization
 
-Model quantization compresses high-precision tensors (FP32, FP16, BF16) into low-bit integers (INT8, INT4) or discrete ternary states ($\{-1, 0, +1\}$). This reduces memory consumption and memory bandwidth requirements by $2\times - 8\times$.
+Model quantization compresses high-precision tensors (FP32, FP16, BF16) into low-bit integers (INT8, INT4) or discrete ternary states {-1, 0, +1}. This reduces memory consumption and memory bandwidth requirements by 2x to 8x.
 
 ### 2.1 Data Types & IEEE-754 Binary Encodings
 
-Under the IEEE-754 standard and modern deep learning formats, continuous floating-point numbers are decomposed into three bitfields: Sign ($s$), Exponent ($e$), and Mantissa/Fraction ($m$):
+Under the IEEE-754 standard and modern deep learning formats, continuous floating-point numbers are decomposed into three bitfields: Sign (s), Exponent (e), and Mantissa/Fraction (m):
 
 $$
 \text{Value} = (-1)^s \times 2^{e - \text{bias}} \times \left(1 + \sum_{i=1}^{M} m_i 2^{-i}\right)
@@ -295,48 +295,72 @@ Quantized INT8 Grid:
 
 #### 2.2.1 Symmetric Quantization (Absmax)
 
-In **symmetric quantization**, the floating-point origin $0.0$ maps directly to the integer $0$ ($z = 0$). The dynamic range is symmetric around zero: $[-\alpha, \alpha]$ where $\alpha = \max(|x|)$.
+In **symmetric quantization**, the floating-point origin 0.0 maps directly to the integer 0. The zero-point is fixed at z = 0. The dynamic range is symmetric around zero, spanning from negative alpha to positive alpha, where alpha equals the maximum absolute value of the input tensor.
 
-1. **Scale Factor ($s$):**
+1. **Scale Factor:**
+
+   The scale factor s maps the floating-point range to the integer grid:
+
    $$
    s = \frac{q_{\max}}{\alpha} = \frac{2^{b-1} - 1}{\max(|x|)}
    $$
 
-2. **Quantization Mapping ($x \to x_q$):**
+2. **Quantization Mapping:**
+
+   Each floating-point value x is scaled, rounded, and clamped to the integer range:
+
    $$
-   x_q = \text{clamp}\left(\text{round}(s \cdot x), -q_{\max}, q_{\max}\right)
+   x_q = \text{clamp}\left(\text{round}(s \cdot x), \; -q_{\max}, \; q_{\max}\right)
    $$
 
-3. **Dequantization Reconstruction ($x_q \to \hat{x}$):**
+3. **Dequantization Reconstruction:**
+
+   The approximate floating-point value is recovered by dividing the quantized integer by the scale:
+
    $$
    \hat{x} = \frac{x_q}{s}
    $$
 
 4. **Maximum Quantization Error:**
+
+   The worst-case reconstruction error is bounded by half the quantization step size:
+
    $$
    \epsilon_{\max} = |x - \hat{x}| \le \frac{1}{2s}
    $$
 
 #### 2.2.2 Asymmetric Quantization (Zero-Point)
 
-When data distributions are skewed (e.g., post-ReLU or post-GeLU activations where $x \ge 0$), symmetric quantization wastes half the integer representation domain. **Asymmetric quantization** introduces an integer **Zero-Point** ($z$):
+When data distributions are skewed (e.g., post-ReLU or post-GeLU activations where all values are non-negative), symmetric quantization wastes half the integer representation domain. **Asymmetric quantization** introduces an integer **Zero-Point** z that shifts the mapping to cover only the actual data range.
 
-1. **Scale Factor ($s$):**
+1. **Scale Factor:**
+
+   The scale factor maps the full data range to the full integer range:
+
    $$
    s = \frac{q_{\max} - q_{\min}}{\max(x) - \min(x)} = \frac{2^b - 1}{\alpha - \beta}
    $$
 
-2. **Zero-Point Calculation ($z$):**
+2. **Zero-Point Calculation:**
+
+   The zero-point z is an integer offset that aligns the floating-point minimum to the integer minimum:
+
    $$
-   z = \text{clamp}\left(\text{round}(-\min(x) \cdot s) + q_{\min}, q_{\min}, q_{\max}\right)
+   z = \text{clamp}\left(\text{round}(-\min(x) \cdot s) + q_{\min}, \; q_{\min}, \; q_{\max}\right)
    $$
 
 3. **Quantization Mapping:**
+
+   Each value is scaled and shifted by the zero-point before clamping:
+
    $$
-   x_q = \text{clamp}\left(\text{round}(s \cdot x) + z, q_{\min}, q_{\max}\right)
+   x_q = \text{clamp}\left(\text{round}(s \cdot x) + z, \; q_{\min}, \; q_{\max}\right)
    $$
 
 4. **Dequantization Reconstruction:**
+
+   The approximate floating-point value is recovered by subtracting the zero-point and dividing by the scale:
+
    $$
    \hat{x} = \frac{x_q - z}{s}
    $$
@@ -363,19 +387,19 @@ Input Array: x = [-6.0, -2.0, 0.0, 1.5, 4.0]
 
 ### 2.3 Outliers, Dynamic Range Clipping & Loss Optimization
 
-In transformer models at scale ($>6.7\text{B}$ parameters), activation distributions exhibit **emergent systematic channel outliers** with magnitudes $20-100\times$ larger than normal values. If the scale factor $s$ is computed strictly from $\alpha = \max(|x|)$, all normal values collapse into a few integer bins.
+In transformer models at scale (above 6.7B parameters), activation distributions exhibit **emergent systematic channel outliers** with magnitudes 20x to 100x larger than normal values. If the scale factor s is computed strictly from the maximum absolute value, all normal values collapse into a few integer bins.
 
 #### 2.3.1 Mean Squared Error (MSE) Optimization
 
-MSE calibration finds the optimal clipping threshold $\alpha^*$ that minimizes the reconstruction error:
+MSE calibration finds the optimal clipping threshold that minimizes the reconstruction error. Rather than using the raw maximum, the threshold alpha is tuned to balance clipping loss against quantization granularity:
 
 $$
-\alpha^* = \arg\min_{\alpha} \frac{1}{N} \sum_{i=1}^{N} \left( x_i - \frac{\text{clamp}\left(\text{round}\left(\frac{q_{\max}}{\alpha} x_i\right), -q_{\max}, q_{\max}\right)}{\frac{q_{\max}}{\alpha}} \right)^2
+\alpha^{\ast} = \arg\min_{\alpha} \frac{1}{N} \sum_{i=1}^{N} \left( x_i - \frac{\text{clamp}\left(\text{round}\left(\frac{q_{\max}}{\alpha} x_i\right), -q_{\max}, q_{\max}\right)}{\frac{q_{\max}}{\alpha}} \right)^2
 $$
 
 #### 2.3.2 Kullback-Leibler (KL) Divergence Calibration
 
-KL divergence treats the original continuous tensor histogram $P$ and the reconstructed quantized histogram $Q$ as probability distributions, minimizing information loss:
+KL divergence treats the original continuous tensor histogram P and the reconstructed quantized histogram Q as probability distributions, minimizing information loss:
 
 $$
 D_{\text{KL}}(P \parallel Q) = \sum_{k=1}^{N} P(k) \log\left(\frac{P(k)}{Q(k)}\right)
@@ -411,40 +435,44 @@ $$
 GPTQ quantizes weight matrices column-by-column while continuously compensating unquantized weights for the introduced quantization error.
 
 1. **Objective Function:**
-   GPTQ seeks quantized weights $\hat{W}$ that minimize the output reconstruction error:
+
+   GPTQ seeks quantized weights that minimize the output reconstruction error:
 
    $$
    \min_{\hat{W}} \| W X - \hat{W} X \|_2^2
    $$
 
 2. **Second-Order Taylor Series Expansion:**
-   Let the quantization perturbation be defined as $\Delta W = \hat{W} - W$. Expanding the loss function around pre-trained weights $W$:
+
+   Let the quantization perturbation be the difference between quantized and original weights. Expanding the loss function around pre-trained weights W using a second-order Taylor series:
 
    $$
    \Delta \mathcal{L} \approx (\nabla_W \mathcal{L})^T \Delta W + \frac{1}{2} \Delta W^T H \Delta W
    $$
 
-   Since the pre-trained weights are already at a local minimum, the first-order gradient vanishes ($\nabla_W \mathcal{L} \approx 0$). The Hessian matrix $H$ with respect to the weights is:
+   Since the pre-trained weights are already at a local minimum, the first-order gradient vanishes. The Hessian matrix H with respect to the weights is:
 
    $$
    H = 2 X X^T
    $$
 
 3. **Optimal Weight Compensation via Inverse Hessian:**
-   When column $q$ is quantized ($W_q \to \hat{W}_q$), the quantization error is $E_q = W_q - \hat{W}_q$. To minimize total error $\Delta \mathcal{L}$, all remaining unquantized columns $j > q$ are updated by:
+
+   When column q is quantized, the quantization error is the difference between the original and quantized column. To minimize total error, all remaining unquantized columns j > q are updated by:
 
    $$
    W_j \leftarrow W_j - \frac{E_q \cdot [H^{-1}]_{q, j}}{[H^{-1}]_{q, q}}
    $$
 
 4. **Cholesky Decomposition:**
+
    Computing full matrix inverses repeatedly is computationally unstable. GPTQ factorizes the inverse Hessian using Cholesky decomposition:
 
    $$
    H^{-1} = L L^T
    $$
 
-   A small diagonal damping term $\lambda I$ (where $\lambda \approx 0.01 \cdot \text{mean}(\text{diag}(H))$) is added to $H$ to guarantee positive-definiteness and numerical stability.
+   A small diagonal damping term is added to H to guarantee positive-definiteness and numerical stability. The damping coefficient is typically set to 1% of the mean diagonal entry of H.
 
 #### 2.5.2 GGUF & K-Quants: Hierarchical Block-Wise Scaling
 
@@ -594,16 +622,16 @@ Sequence models navigate fundamental tradeoffs between three competing objective
 
 | Architecture | Training Parallelism | Step-Wise Inference Compute | KV Cache Context Memory Footprint | Long-Context Modeling Fidelity |
 | :--- | :--- | :--- | :--- | :--- |
-| **Standard Transformer** | $O(1)$ Depth (Parallel Attention) | $O(L)$ Compute per step | $O(L)$ KV Cache (Grows linearly) | Exceptional (Raw history access) |
-| **Classic RNN / LSTM** | $O(L)$ Sequential (No parallelization) | $O(1)$ Compute per step | $O(1)$ Hidden vector $h_t$ | Poor (Contextual forgetting) |
-| **LTI SSMs (S4 / LSSL)** | $O(L \log L)$ (Parallel FFT Conv) | $O(1)$ Compute per step | $O(1)$ Hidden vector $h_t$ | Moderate (Fails content filtering) |
-| **Selective SSM (Mamba)** | $O(L)$ (Parallel Associative Scan) | $O(1)$ Compute per step | $O(1)$ Hidden vector $h_t$ | Exceptional (Matches Transformers) |
+| **Standard Transformer** | O(1) Depth (Parallel Attention) | O(L) Compute per step | O(L) KV Cache (Grows linearly) | Exceptional (Raw history access) |
+| **Classic RNN / LSTM** | O(L) Sequential (No parallelization) | O(1) Compute per step | O(1) Hidden vector h_t | Poor (Contextual forgetting) |
+| **LTI SSMs (S4 / LSSL)** | O(L log L) (Parallel FFT Conv) | O(1) Compute per step | O(1) Hidden vector h_t | Moderate (Fails content filtering) |
+| **Selective SSM (Mamba)** | O(L) (Parallel Associative Scan) | O(1) Compute per step | O(1) Hidden vector h_t | Exceptional (Matches Transformers) |
 
 ---
 
 ### 3.2 Continuous-Time State Space Models (SSMs)
 
-Continuous SSMs map a 1D continuous input signal $x(t) \in \mathbb{R}$ to an output signal $y(t) \in \mathbb{R}$ through an $N$-dimensional latent state variable $h(t) \in \mathbb{R}^N$:
+Continuous SSMs map a 1D continuous input signal x(t) to an output signal y(t) through an N-dimensional latent state variable h(t):
 
 $$
 \frac{d h(t)}{dt} = \dot{h}(t) = \mathbf{A} h(t) + \mathbf{B} x(t)
@@ -794,8 +822,8 @@ $$
 
 #### 3.7.2 Physical Intuition of Step-Size Delta
 
-- **Large $\Delta_k \to \infty$:** $\mathbf{\bar{A}}_k = \exp(\Delta_k \mathbf{A}) \to 0$, while $\mathbf{\bar{B}}_k \to \text{large}$. The model **resets** old history and writes current token $x_k$ into memory.
-- **Small $\Delta_k \to 0$:** $\mathbf{\bar{A}}_k = \exp(\Delta_k \mathbf{A}) \to \mathbf{I}$, while $\mathbf{\bar{B}}_k \to 0$. The model **ignores** current token $x_k$ and preserves existing memory unchanged.
+- **Large Delta (approaches infinity):** The discretized matrix A_bar approaches zero, while B_bar becomes large. The model **resets** old history and writes current token x_k into memory.
+- **Small Delta (approaches zero):** The discretized matrix A_bar approaches the identity matrix I, while B_bar approaches zero. The model **ignores** current token x_k and preserves existing memory unchanged.
 
 ---
 
@@ -971,7 +999,7 @@ $$
 \text{MLP}(X) = \text{GeLU}(X W_1) W_2
 $$
 
-1. **Column-Parallel Linear 1:** Slices $W_1$ column-wise into $N$ shards $[W_{1,0} \mid W_{1,1} \mid \dots \mid W_{1,N-1}]$. Because $\text{GeLU}$ is element-wise:
+1. **Column-Parallel Linear 1:** Slices W_1 column-wise into N shards. Because GeLU is element-wise:
    $$
    Z_i = \text{GeLU}(X W_{1,i}) \quad (\text{Zero inter-GPU communication required})
    $$
@@ -994,7 +1022,7 @@ $$
 
 #### 4.4.1 The Pipeline Bubble: Exact Derivation
 
-When partitioning $L$ layers across $p$ pipeline stages with $m$ micro-batches ($m \gg p$):
+When partitioning L layers across p pipeline stages with m micro-batches (where m is much greater than p):
 
 $$
 t_{\text{idle}} = (p - 1) \cdot (t_F + t_B), \qquad t_{\text{total}} = (m + p - 1) \cdot (t_F + t_B)
@@ -1039,7 +1067,7 @@ Act Mem:  +1   +2   +3   +4   -1   +4   -1   +4   (Bounded at p = 4!)
 
 #### 4.5.1 The Ring Communication Topology
 
-For long sequences ($128\text{k} - 1\text{M}$ tokens), sequence length $L$ is partitioned into chunks of size $L/N$ across $N$ GPUs organized in a ring.
+For long sequences (128k to 1M tokens), sequence length L is partitioned into chunks of size L/N across N GPUs organized in a ring.
 
 ```text
 Ring Attention Execution Over 4 GPUs (Sequence Length L sharded into 4 chunks):
@@ -1056,7 +1084,7 @@ All-to-all attention computed with zero memory footprint for the full L x L matr
 
 #### 4.5.2 Online Numerically Stable Softmax Accumulation Proof
 
-Let block $1$ have local maximum $m_1$, normalizer $d_1 = \sum e^{S_{1,j} - m_1}$, and unnormalized accumulator $O_1$. When block $2$ arrives with stats $(m_2, d_2, O_2)$:
+Let block 1 have local maximum m_1, normalizer d_1, and unnormalized accumulator O_1. When block 2 arrives with stats (m_2, d_2, O_2), the online merge proceeds as:
 
 $$
 m_{\text{new}} = \max(m_1, m_2)
@@ -1124,10 +1152,10 @@ This guarantees bit-level mathematical equivalence to monolithic softmax without
 
 | Configuration | Parameters / GPU | Gradients / GPU | Optimizer / GPU | Total Static Memory (7B on 4 GPUs) | Total Extra Communication Volume |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **DDP (ZeRO-0)** | $2\Phi$ ($14\text{ GB}$) | $2\Phi$ ($14\text{ GB}$) | $12\Phi$ ($84\text{ GB}$) | $112.0\text{ GB}$ | Baseline ($2\Phi$ All-Reduce) |
-| **ZeRO-1** | $2\Phi$ ($14\text{ GB}$) | $2\Phi$ ($14\text{ GB}$) | $\frac{12\Phi}{N}$ ($21\text{ GB}$) | $49.0\text{ GB}$ | Baseline $+ \Phi$ All-Gather |
-| **ZeRO-2** | $2\Phi$ ($14\text{ GB}$) | $\frac{2\Phi}{N}$ ($3.5\text{ GB}$) | $\frac{12\Phi}{N}$ ($21\text{ GB}$) | $38.5\text{ GB}$ | Baseline (Reduce-Scatter replaces All-Reduce) |
-| **ZeRO-3 / FSDP** | $\frac{2\Phi}{N}$ ($3.5\text{ GB}$) | $\frac{2\Phi}{N}$ ($3.5\text{ GB}$) | $\frac{12\Phi}{N}$ ($21\text{ GB}$) | $28.0\text{ GB}$ | Baseline $+ 1.5\times$ Forward/Backward All-Gather |
+| **DDP (ZeRO-0)** | 2P (14 GB) | 2P (14 GB) | 12P (84 GB) | 112.0 GB | Baseline (2P All-Reduce) |
+| **ZeRO-1** | 2P (14 GB) | 2P (14 GB) | 12P/N (21 GB) | 49.0 GB | Baseline + P All-Gather |
+| **ZeRO-2** | 2P (14 GB) | 2P/N (3.5 GB) | 12P/N (21 GB) | 38.5 GB | Baseline (Reduce-Scatter replaces All-Reduce) |
+| **ZeRO-3 / FSDP** | 2P/N (3.5 GB) | 2P/N (3.5 GB) | 12P/N (21 GB) | 28.0 GB | Baseline + 1.5x Forward/Backward All-Gather |
 
 ---
 
@@ -1139,7 +1167,7 @@ $$
 S = Q K^T \in \mathbb{R}^{L \times L}, \qquad P = \text{softmax}(S) \in \mathbb{R}^{L \times L}, \qquad O = P V \in \mathbb{R}^{L \times d}
 $$
 
-FlashAttention partitions $Q, K, V$ into tiles of size $B_r \times d$ and $B_c \times d$ that fit inside on-chip SRAM, computing online softmax rescaling entirely within SRAM and reducing HBM transfers from $O(L^2)$ to $O(L)$.
+FlashAttention partitions Q, K, V into tiles that fit inside on-chip SRAM, computing online softmax rescaling entirely within SRAM and reducing HBM transfers from O(L^2) to O(L).
 
 ---
 
@@ -1202,40 +1230,40 @@ $$
 
 ### 5.3 First-Principles FLOP & Parameter Counting (Case Study: LLaMA 3.3 70B)
 
-Consider a transformer with hidden dimension $d$, $L$ layers, vocabulary $V$, $n_q$ query heads, $n_{kv}$ key-value heads ($r = n_{kv}/n_q$), and SwiGLU intermediate size $d_{\text{ffn}}$.
+Consider a transformer with hidden dimension d, L layers, vocabulary V, query heads n_q, key-value heads n_kv (with ratio r = n_kv / n_q), and SwiGLU intermediate size d_ffn.
 
 #### 5.3.1 Layer-by-Layer FLOP Derivations
 
-Multiplying an $m \times k$ matrix by a $k \times n$ matrix requires $2mkn$ FLOPs.
+Multiplying an (m x k) matrix by a (k x n) matrix requires 2mkn FLOPs.
 
 For sequence length $S$:
 
-1. **RMSNorm Operations ($4Sd$ FLOPs per normalization):**
+1. **RMSNorm Operations (4Sd FLOPs per normalization):**
    $$
    \text{FLOPs}_{\text{RMSNorm}} = S \cdot d \text{ (square)} + S \cdot d \text{ (sum)} + S \cdot d \text{ (div)} + S \cdot d \text{ (scale)} = 4Sd
    $$
 
-2. **Query Projection ($W_Q \in \mathbb{R}^{d \times d}$):**
+2. **Query Projection (W_Q is d x d):**
    $$
    \text{FLOPs}_Q = 2 S d^2
    $$
 
-3. **Key & Value Projections ($W_K, W_V \in \mathbb{R}^{d \times r d}$):**
+3. **Key & Value Projections (W_K, W_V are d x rd):**
    $$
    \text{FLOPs}_{KV} = 2 \times \left( 2 S d \cdot (r d) \right) = 4 r S d^2 \quad \left(\text{For } r = \frac{1}{8}, \text{ FLOPs}_{KV} = 0.5 S d^2\right)
    $$
 
-4. **Attention Computations ($Q K^T$ and $A V$):**
+4. **Attention Computations (QK^T and AV):**
    $$
    \text{FLOPs}_{QK^T} = 2 S^2 d, \qquad \text{FLOPs}_{AV} = 2 S^2 d
    $$
 
-5. **Output Projection ($W_O \in \mathbb{R}^{d \times d}$):**
+5. **Output Projection (W_O is d x d):**
    $$
    \text{FLOPs}_O = 2 S d^2
    $$
 
-6. **SwiGLU Feed-Forward Network ($W_{\text{gate}}, W_{\text{up}}, W_{\text{down}} \in \mathbb{R}^{d \times d_{\text{ffn}}}$):**
+6. **SwiGLU Feed-Forward Network (W_gate, W_up, W_down are d x d_ffn):**
    $$
    \text{FLOPs}_{\text{FFN}} = 3 \times \left( 2 S d d_{\text{ffn}} \right) = 6 S d d_{\text{ffn}} \quad (\text{For } d_{\text{ffn}} = 3.5d, \text{ FLOPs}_{\text{FFN}} = 21 S d^2)
    $$
@@ -1244,7 +1272,7 @@ $$
 \text{Total Layer FLOPs} = \left( 4 + 4r + \frac{6 d_{\text{ffn}}}{d} \right) S d^2 + 4 S^2 d
 $$
 
-During single-token decoding ($S = 1$), attention quadratic terms are negligible:
+During single-token decoding (S = 1), attention quadratic terms are negligible:
 
 $$
 \text{Forward Compute per Token} \approx 2 \times \Phi \text{ FLOPs}
@@ -1453,7 +1481,7 @@ In transformer self-attention, the dot-product $\text{Attn}(Q, K) = Q K^T$ is pe
 ### 6.1 The Fundamental Architectural Principle: Vectors vs. Weights
 
 > [!IMPORTANT]
-> **Core Architectural Rule:** RoPE is applied **strictly to the dynamic Query ($Q$) and Key ($K$) activation vectors** after linear projection. It is **never applied to the static projection weight matrices ($W_Q, W_K$)**.
+> **Core Architectural Rule:** RoPE is applied **strictly to the dynamic Query (Q) and Key (K) activation vectors** after linear projection. It is **never applied to the static projection weight matrices (W_Q, W_K)**.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -1469,14 +1497,18 @@ In transformer self-attention, the dot-product $\text{Attn}(Q, K) = Q K^T$ is pe
 ```
 
 #### Why RoPE Cannot Be Applied to Weights:
-1. **Dynamic Position Dependence:** Weight matrices $W_Q \in \mathbb{R}^{d \times d}$ and $W_K \in \mathbb{R}^{d \times d}$ are static, learned parameters shared universally across all tokens. In contrast, the token position $m \in \{0, 1, 2, \dots, L\}$ changes dynamically for every token in a sentence. Rotation must be token-specific.
-2. **Relative Distance Encoding:** Applying rotation matrices $R_{\Theta, m}$ and $R_{\Theta, n}$ to vectors ensures that $R_{\Theta, m}^T R_{\Theta, n} = R_{\Theta, n-m}$, embedding relative token displacement $(n - m)$ directly into the attention inner product.
+1. **Dynamic Position Dependence:** Weight matrices W_Q and W_K (both in R^{d x d}) are static, learned parameters shared universally across all tokens. In contrast, the token position m changes dynamically for every token in a sentence. Rotation must be token-specific.
+2. **Relative Distance Encoding:** Applying rotation matrices R_m and R_n to vectors ensures that their product encodes strictly the relative displacement (n - m) directly into the attention inner product:
+
+   $$
+   R_{\Theta, m}^T \; R_{\Theta, n} = R_{\Theta, \; n-m}
+   $$
 
 ---
 
 ### 6.2 The Block-Diagonal 2D Rotation Matrix Formulation
 
-For an attention head of dimension $d$ (where $d$ is an even integer), RoPE constructs a $d \times d$ orthogonal block-diagonal rotation matrix $R_{\Theta, m}$ composed of $d/2$ independent 2D rotation sub-matrices:
+For an attention head of dimension d (where d is an even integer), RoPE constructs a d x d orthogonal block-diagonal rotation matrix composed of d/2 independent 2D rotation sub-matrices:
 
 $$
 R_{\Theta, m} = \begin{pmatrix}
@@ -1490,8 +1522,8 @@ R_{\Theta, m} = \begin{pmatrix}
 \end{pmatrix}
 $$
 
-1. **Token Position Index ($m$):** The integer index of the token in the sequence ($m = 0, 1, 2, \dots$).
-2. **Base Channel Frequencies ($\theta_i$):** Dimension-dependent base frequencies defined geometrically:
+1. **Token Position Index (m):** The integer index of the token in the sequence (m = 0, 1, 2, ...).
+2. **Base Channel Frequencies:** Dimension-dependent base frequencies defined geometrically:
    $$
    \theta_i = 10000^{-2(i-1)/d} \quad \text{for } i \in \{1, 2, \dots, d/2\}
    $$
@@ -1551,7 +1583,7 @@ $$
 
 ### 6.4 Complex Representation & Mathematical Derivation via Euler's Formula
 
-RoPE was derived by seeking a function $f(x, m)$ such that the inner product between query at $m$ and key at $n$ depends purely on $(m - n)$:
+RoPE was derived by seeking a function f(x, m) such that the inner product between query at position m and key at position n depends purely on the relative distance (m - n):
 
 $$
 \langle f(Q, m), \; f(K, n) \rangle = g(Q, K, m - n)
@@ -1577,7 +1609,9 @@ $$
    $$
    Absolute positions $m$ and $n$ drop out, leaving strictly the relative displacement $(m - n)$.
 
-4. **Matrix Realization via Euler's Identity ($e^{i m \theta} = \cos(m\theta) + i \sin(m\theta)$):**
+4. **Matrix Realization via Euler's Identity:**
+
+   Using Euler's formula, the complex exponential expands as:
    $$
    f(q, m) = (q_1 + i q_2)(\cos(m\theta) + i \sin(m\theta)) = (q_1 \cos(m\theta) - q_2 \sin(m\theta)) + i (q_1 \sin(m\theta) + q_2 \cos(m\theta))
    $$
@@ -1606,8 +1640,8 @@ Why not save compute by applying rotation only to Query $Q$?
 ```
 
 #### The Clock Hands Analogy:
-- **Both Rotated:** Token position $m$ rotates Query hand by $m^\circ$; position $n$ rotates Key hand by $n^\circ$. The dot product measures the **relative angle between the two clock hands** ($(n - m)^\circ$). Tokens separated by 2 positions at indices $(1, 3)$ or $(101, 103)$ produce the exact same angle ($2^\circ$).
-- **Only Q Rotated:** Query hand rotates by $m^\circ$, but Key hand stays pinned at $12\text{ o'clock}$ ($0^\circ$). The measured angle is always $m^\circ$, destroying distance context.
+- **Both Rotated:** Token position m rotates Query hand by m degrees; position n rotates Key hand by n degrees. The dot product measures the **relative angle between the two clock hands** ((n - m) degrees). Tokens separated by 2 positions at indices (1, 3) or (101, 103) produce the exact same angle (2 degrees).
+- **Only Q Rotated:** Query hand rotates by m degrees, but Key hand stays pinned at 12 o'clock (0 degrees). The measured angle is always m degrees, destroying distance context.
 
 ---
 
@@ -1675,8 +1709,8 @@ Standard global attention incurs $O(L^2)$ computation for context length $L$. Ge
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-1. **Sliding Window Size:** Small models (E2B, E4B) use a local window of $512$ tokens; large models (26B A4B, 31B) use $1024$ tokens. Compute complexity drops from $O(L^2)$ to $O(L \cdot W)$.
-2. **$K=V$ Global Attention Fusion:** In global attention layers, Key projections are set equal to Value projections ($K = V$), halving KV cache memory footprint for full-context layers.
+1. **Sliding Window Size:** Small models (E2B, E4B) use a local window of 512 tokens; large models (26B A4B, 31B) use 1024 tokens. Compute complexity drops from O(L^2) to O(L * W).
+2. **K=V Global Attention Fusion:** In global attention layers, Key projections are set equal to Value projections (K = V), halving KV cache memory footprint for full-context layers.
 3. **Guaranteed Global Aggregation:** The final layer is always a global attention layer, ensuring representations across the entire context window are synthesized before generating predictions.
 
 ---
@@ -1893,7 +1927,7 @@ Target Deployment Constraints:
 | $\mathbf{\bar{A}}, \mathbf{\bar{B}}$ | Discretized state matrices | Discretized via Zero-Order Hold (ZOH) with step $\Delta$ |
 | $\Delta$ | Step size parameter ($\mathbb{R}^+$) | Timescale resolution; acts as input-dependent gate in Mamba |
 | $\mathbf{\bar{K}}$ | SSM convolution kernel ($\mathbb{R}^L$) | Enables FFT-based parallel sequence training in LTI SSMs |
-| $R_{\Theta, m}$ | Block-diagonal rotation matrix ($\mathbb{R}^{d \times d}$) | Rotates $Q, K$ vectors by position $m$ in RoPE |
+| R(Theta, m) | Block-diagonal rotation matrix (d x d) | Rotates Q, K vectors by position m in RoPE |
 | $\theta_i$ | Geometric base frequency ($10000^{-2(i-1)/d}$) | Frequency scale for $i$-th 2D coordinate plane in RoPE |
 | $s$ | Quantization scale factor ($\mathbb{R}^+$) | Maps continuous interval to discrete integer grid |
 | $z$ | Integer zero-point ($\mathbb{Z}$) | Offsets asymmetric quantized values |
