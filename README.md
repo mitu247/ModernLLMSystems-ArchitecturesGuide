@@ -533,63 +533,15 @@ Loss L
 
 ---
 
-### 2.7 Sub-2-Bit and Extreme Low-Bit Paradigms
-
-#### 2.7.1 BitNet 1-Bit (BitLinear)
-
-BitNet replaces standard `nn.Linear` layers with `BitLinear`, mapping weights to 1-bit binary values $\{-1, +1\}$ and activations to INT8:
-
-$$
-W_{\text{bin}} = \text{Sign}(W - \bar{W}), \qquad \text{where } \text{Sign}(x) = \begin{cases} +1, & x \ge 0 \\ -1, & x < 0 \end{cases}
-$$
-
-$$
-\beta = \frac{1}{nm} \|W\|_1 = \frac{1}{nm}\sum_{i=1}^n \sum_{j=1}^m |W_{i,j}|
-$$
-
-$$
-X_{\text{quant}} = \text{clamp}\left(\text{round}\left( \frac{127}{\alpha} X \right), -128, 127\right), \qquad \alpha = \|X\|_{\infty}
-$$
-
-$$
-Y = \left( X_{\text{quant}} \times W_{\text{bin}} \right) \times \frac{\alpha \cdot \beta}{127}
-$$
-
-#### 2.7.2 BitNet 1.58b: Ternary Quantization & Addition-Only Inference
-
-BitNet 1.58b introduces zero ($0$) into the weight representation, creating a ternary alphabet $\{-1, 0, +1\}$:
-
-$$
-\text{Information Capacity per Parameter} = \log_2(3) \approx \mathbf{1.585\text{ bits}}
-$$
-
-1. **Weight Quantization (`absmean`):**
-$$
-W_{\text{ternary}} = \text{clamp}\left( \text{round}\left( \frac{W}{\gamma + \epsilon} \right), -1, +1 \right), \qquad \gamma = \frac{1}{nm} \sum_{i,j} |W_{i,j}|
-$$
-
-2. **Activation Quantization:**
-$$
-X_{\text{quant}} = \text{clamp}\left( \text{round}\left( \frac{X \cdot 127}{\|X\|_{\infty}} \right), -128, 127 \right)
-$$
-
-3. **Silicon Execution Elimination:**
-$$
-y_i = \sum_{j=1}^{d} W_{i,j} x_j = \sum_{j: W_{i,j}=+1} x_j - \sum_{j: W_{i,j}=-1} x_j
-$$
-   This eliminates floating-point multiplication units (MACs) entirely from the silicon datapath, replacing them with integer addition and subtraction.
-
----
-
 ### 2.8 Quantization Comparison Matrix
 
-| Method | Weight Bits | Activation Bits | Multiply-Accumulate Operations | Accuracy Retention ($>7\text{B}$) | Primary Bottleneck | Key Systems Role |
+| Method | Weight Bits | Activation Bits | Multiply-Accumulate Operations | Accuracy Retention (>7B) | Primary Bottleneck | Key Systems Role |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **FP16 / BF16** | 16 | 16 | FP16/BF16 Tensor Core | 100% (Baseline) | Memory capacity & bandwidth | Pre-training, full precision |
-| **FP8 (E4M3)** | 8 | 8 | FP8 Tensor Core | $>99.5\%$ | Dynamic range calibration | High-throughput H100 pre-training |
-| **INT8 (PTQ)** | 8 | 8 | INT8 Tensor Core | $>99.0\%$ | Activation outlier handling | Enterprise server inference |
-| **GPTQ (PTQ)** | 4 | 16 | INT4 Dequant + FP16 GEMM | $>98.0\%$ | Calibration distribution shift | GPU VRAM-constrained serving |
-| **GGUF (K-Quants)** | 2-6 | 16 | Block-Dequantized GEMV | $>95.0-99\%$ | CPU memory bandwidth | Consumer hardware, CPU/GPU offload |
+| **FP8 (E4M3)** | 8 | 8 | FP8 Tensor Core | >99.5% | Dynamic range calibration | High-throughput H100 pre-training |
+| **INT8 (PTQ)** | 8 | 8 | INT8 Tensor Core | >99.0% | Activation outlier handling | Enterprise server inference |
+| **GPTQ (PTQ)** | 4 | 16 | INT4 Dequant + FP16 GEMM | >98.0% | Calibration distribution shift | GPU VRAM-constrained serving |
+| **GGUF (K-Quants)** | 2-6 | 16 | Block-Dequantized GEMV | >95.0-99% | CPU memory bandwidth | Consumer hardware, CPU/GPU offload |
 | **BitNet 1.0** | 1 | 8 | INT8 Add/Subtract | Medium | High-entropy representational limits | Ultra-low power edge devices |
 | **BitNet 1.58b** | 1.58 | 8 | INT8 Addition Only | Parity with FP16 at scale | Specialized ternary ASIC hardware | Next-gen energy-efficient inference |
 
@@ -950,26 +902,31 @@ $$
 #### 4.1.2 Mathematical Proof: Why FP32 Master Weights & Optimizer States Are Required
 
 1. **Underflow of Gradient Updates:**
-   In FP16, machine epsilon is $\epsilon_{\text{FP16}} \approx 9.77 \times 10^{-4}$. A standard learning rate update:
+
+   In FP16, machine epsilon is approximately 9.77 x 10^-4. A standard learning rate update:
+
 $$
 \Delta w = \eta \cdot g_t = 10^{-4} \times 10^{-3} = 10^{-7}
 $$
-   Adding $10^{-7}$ directly to an FP16 weight ($w \approx 1.0$) causes underflow ($\Delta w \to 0$), freezing model updates.
+
+   Adding 10^-7 directly to an FP16 weight (w ≈ 1.0) causes underflow (the update rounds to 0), freezing model updates.
 
 2. **Compound Rounding Errors in Adam Moving Averages:**
+
 $$
 m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t, \qquad v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2
 $$
-   Accumulating these recursive sums over $10^5$ steps in 16-bit precision leads to variance collapse and loss divergence.
+
+   Accumulating these recursive sums over 100,000 steps in 16-bit precision leads to variance collapse and loss divergence.
 
 ---
 
 ### 4.2 Data Parallelism (DDP) & Ring All-Reduce Proofs
 
-In Distributed Data Parallelism, $N$ GPUs compute independent mini-batch gradients $\nabla \mathcal{L}_i$. Ring All-Reduce averages gradients in two phases:
+In Distributed Data Parallelism, N GPUs compute independent mini-batch gradients. Ring All-Reduce averages gradients in two phases:
 
-1. **Reduce-Scatter:** Each GPU receives an aggregated $1/N$ gradient shard after communicating $\frac{N-1}{N} \times |W|$ bytes.
-2. **All-Gather:** Each GPU broadcasts its updated $1/N$ shard after communicating $\frac{N-1}{N} \times |W|$ bytes.
+1. **Reduce-Scatter:** Each GPU receives an aggregated 1/N gradient shard after communicating (N-1)/N x |W| bytes.
+2. **All-Gather:** Each GPU broadcasts its updated 1/N shard after communicating (N-1)/N x |W| bytes.
 
 $$
 \text{Total All-Reduce Communication Volume} = 2 \times \left(\frac{N-1}{N}\right) \times |W| \text{ bytes}
