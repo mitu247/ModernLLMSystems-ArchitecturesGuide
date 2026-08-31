@@ -297,33 +297,33 @@ Quantized INT8 Grid:
 
 In **symmetric quantization**, the floating-point origin 0.0 maps directly to the integer 0. The zero-point is fixed at z = 0. The dynamic range is symmetric around zero, spanning from negative alpha to positive alpha, where alpha equals the maximum absolute value of the input tensor.
 
-1. **Scale Factor:**
+**Scale Factor:**
 
-   The scale factor s maps the floating-point range to the integer grid:
+The scale factor s maps the floating-point range to the integer grid:
 
 $$
 s = \frac{q_{\max}}{\alpha} = \frac{2^{b-1} - 1}{\max(|x|)}
 $$
 
-2. **Quantization Mapping:**
+**Quantization Mapping:**
 
-   Each floating-point value x is scaled, rounded, and clamped to the integer range:
+Each floating-point value x is scaled, rounded, and clamped to the integer range:
 
 $$
 x_q = \text{clamp}\left(\text{round}(s \cdot x), \; -q_{\max}, \; q_{\max}\right)
 $$
 
-3. **Dequantization Reconstruction:**
+**Dequantization Reconstruction:**
 
-   The approximate floating-point value is recovered by dividing the quantized integer by the scale:
+The approximate floating-point value is recovered by dividing the quantized integer by the scale:
 
 $$
 \hat{x} = \frac{x_q}{s}
 $$
 
-4. **Maximum Quantization Error:**
+**Maximum Quantization Error:**
 
-   The worst-case reconstruction error is bounded by half the quantization step size:
+The worst-case reconstruction error is bounded by half the quantization step size:
 
 $$
 \epsilon_{\max} = |x - \hat{x}| \le \frac{1}{2s}
@@ -333,33 +333,33 @@ $$
 
 When data distributions are skewed (e.g., post-ReLU or post-GeLU activations where all values are non-negative), symmetric quantization wastes half the integer representation domain. **Asymmetric quantization** introduces an integer **Zero-Point** z that shifts the mapping to cover only the actual data range.
 
-1. **Scale Factor:**
+**Scale Factor:**
 
-   The scale factor maps the full data range to the full integer range:
+The scale factor maps the full data range to the full integer range:
 
 $$
 s = \frac{q_{\max} - q_{\min}}{\max(x) - \min(x)} = \frac{2^b - 1}{\alpha - \beta}
 $$
 
-2. **Zero-Point Calculation:**
+**Zero-Point Calculation:**
 
-   The zero-point z is an integer offset that aligns the floating-point minimum to the integer minimum:
+The zero-point z is an integer offset that aligns the floating-point minimum to the integer minimum:
 
 $$
 z = \text{clamp}\left(\text{round}(-\min(x) \cdot s) + q_{\min}, \; q_{\min}, \; q_{\max}\right)
 $$
 
-3. **Quantization Mapping:**
+**Quantization Mapping:**
 
-   Each value is scaled and shifted by the zero-point before clamping:
+Each value is scaled and shifted by the zero-point before clamping:
 
 $$
 x_q = \text{clamp}\left(\text{round}(s \cdot x) + z, \; q_{\min}, \; q_{\max}\right)
 $$
 
-4. **Dequantization Reconstruction:**
+**Dequantization Reconstruction:**
 
-   The approximate floating-point value is recovered by subtracting the zero-point and dividing by the scale:
+The approximate floating-point value is recovered by subtracting the zero-point and dividing by the scale:
 
 $$
 \hat{x} = \frac{x_q - z}{s}
@@ -434,17 +434,17 @@ $$
 
 GPTQ quantizes weight matrices column-by-column while continuously compensating unquantized weights for the introduced quantization error.
 
-1. **Objective Function:**
+**Objective Function:**
 
-   GPTQ seeks quantized weights that minimize the output reconstruction error:
+GPTQ seeks quantized weights that minimize the output reconstruction error:
 
 $$
 \min_{\hat{W}} \| W X - \hat{W} X \|_2^2
 $$
 
-2. **Second-Order Taylor Series Expansion:**
+**Second-Order Taylor Series Expansion:**
 
-   Let the quantization perturbation be the difference between quantized and original weights. Expanding the loss function around pre-trained weights W using a second-order Taylor series:
+Let the quantization perturbation be the difference between quantized and original weights. Expanding the loss function around pre-trained weights W using a second-order Taylor series:
 
 $$
 \Delta \mathcal{L} \approx (\nabla_W \mathcal{L})^T \Delta W + \frac{1}{2} \Delta W^T H \Delta W
@@ -456,23 +456,23 @@ $$
 H = 2 X X^T
 $$
 
-3. **Optimal Weight Compensation via Inverse Hessian:**
+**Optimal Weight Compensation via Inverse Hessian:**
 
-   When column q is quantized, the quantization error is the difference between the original and quantized column. To minimize total error, all remaining unquantized columns j > q are updated by:
+When column q is quantized, the quantization error is the difference between the original and quantized column. To minimize total error, all remaining unquantized columns j > q are updated by:
 
 $$
 W_j \leftarrow W_j - \frac{E_q \cdot [H^{-1}]_{q, j}}{[H^{-1}]_{q, q}}
 $$
 
-4. **Cholesky Decomposition:**
+**Cholesky Decomposition:**
 
-   Computing full matrix inverses repeatedly is computationally unstable. GPTQ factorizes the inverse Hessian using Cholesky decomposition:
+Computing full matrix inverses repeatedly is computationally unstable. GPTQ factorizes the inverse Hessian using Cholesky decomposition:
 
 $$
 H^{-1} = L L^T
 $$
 
-   A small diagonal damping term is added to H to guarantee positive-definiteness and numerical stability. The damping coefficient is typically set to 1% of the mean diagonal entry of H.
+A small diagonal damping term is added to H to guarantee positive-definiteness and numerical stability. The damping coefficient is typically set to 1% of the mean diagonal entry of H.
 
 #### 2.5.2 GGUF & K-Quants: Hierarchical Block-Wise Scaling
 
@@ -901,23 +901,23 @@ $$
 
 #### 4.1.2 Mathematical Proof: Why FP32 Master Weights & Optimizer States Are Required
 
-1. **Underflow of Gradient Updates:**
+**Underflow of Gradient Updates:**
 
-   In FP16, machine epsilon is approximately 9.77 x 10^-4. A standard learning rate update:
+In FP16, machine epsilon is approximately 9.77 x 10^-4. A standard learning rate update:
 
 $$
 \Delta w = \eta \cdot g_t = 10^{-4} \times 10^{-3} = 10^{-7}
 $$
 
-   Adding 10^-7 directly to an FP16 weight (w ≈ 1.0) causes underflow (the update rounds to 0), freezing model updates.
+Adding 10^-7 directly to an FP16 weight (w ≈ 1.0) causes underflow (the update rounds to 0), freezing model updates.
 
-2. **Compound Rounding Errors in Adam Moving Averages:**
+**Compound Rounding Errors in Adam Moving Averages:**
 
 $$
 m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t, \qquad v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2
 $$
 
-   Accumulating these recursive sums over 100,000 steps in 16-bit precision leads to variance collapse and loss divergence.
+Accumulating these recursive sums over 100,000 steps in 16-bit precision leads to variance collapse and loss divergence.
 
 ---
 
@@ -925,8 +925,8 @@ $$
 
 In Distributed Data Parallelism, N GPUs compute independent mini-batch gradients. Ring All-Reduce averages gradients in two phases:
 
-1. **Reduce-Scatter:** Each GPU receives an aggregated 1/N gradient shard after communicating (N-1)/N x |W| bytes.
-2. **All-Gather:** Each GPU broadcasts its updated 1/N shard after communicating (N-1)/N x |W| bytes.
+**Reduce-Scatter:** Each GPU receives an aggregated 1/N gradient shard after communicating (N-1)/N x |W| bytes.
+**All-Gather:** Each GPU broadcasts its updated 1/N shard after communicating (N-1)/N x |W| bytes.
 
 $$
 \text{Total All-Reduce Communication Volume} = 2 \times \left(\frac{N-1}{N}\right) \times |W| \text{ bytes}
@@ -956,16 +956,19 @@ $$
 \text{MLP}(X) = \text{GeLU}(X W_1) W_2
 $$
 
-1. **Column-Parallel Linear 1:** Slices W_1 column-wise into N shards. Because GeLU is element-wise:
+**Column-Parallel Linear 1:** Slices W_1 column-wise into N shards. Because GeLU is element-wise:
+
 $$
 Z_i = \text{GeLU}(X W_{1,i}) \quad (\text{Zero inter-GPU communication required})
 $$
 
-2. **Row-Parallel Linear 2:** Slices $W_2$ row-wise:
+**Row-Parallel Linear 2:** Slices $W_2$ row-wise:
+
 $$
 Y = \sum_{i=0}^{N-1} Z_i W_{2,i}
 $$
-   A single **All-Reduce (Sum)** operation across ranks yields mathematically exact output $Y$.
+
+A single **All-Reduce (Sum)** operation across ranks yields mathematically exact output $Y$.
 
 #### 4.3.2 Slicing Multi-Head Self-Attention (MHSA)
 
@@ -1088,19 +1091,22 @@ This guarantees bit-level mathematical equivalence to monolithic softmax without
 ```
 
 #### 4.6.1 ZeRO-Stage 1: Optimizer State Sharding
-- Partitions FP32 Adam states ($12\Phi$) across $N$ ranks. Memory per GPU:
+Partitions FP32 Adam states ($12\Phi$) across $N$ ranks. Memory per GPU:
+
 $$
   M_{\text{ZeRO-1}} = 2\Phi + 2\Phi + \frac{12\Phi}{N}
 $$
 
 #### 4.6.2 ZeRO-Stage 2: Gradient Sharding
-- Retains gradients only for assigned parameter shards via Reduce-Scatter. Memory per GPU:
+Retains gradients only for assigned parameter shards via Reduce-Scatter. Memory per GPU:
+
 $$
   M_{\text{ZeRO-2}} = 2\Phi + \frac{2\Phi}{N} + \frac{12\Phi}{N}
 $$
 
 #### 4.6.3 ZeRO-Stage 3: Parameter Sharding (Fully Sharded Data Parallel)
-- Shards parameters themselves across ranks. Layers are gathered on-the-fly and discarded immediately after forward/backward execution. Memory per GPU:
+Shards parameters themselves across ranks. Layers are gathered on-the-fly and discarded immediately after forward/backward execution. Memory per GPU:
+
 $$
   M_{\text{ZeRO-3}} = \frac{2\Phi}{N} + \frac{2\Phi}{N} + \frac{12\Phi}{N} = \frac{16\Phi}{N}
 $$
@@ -1195,32 +1201,38 @@ Multiplying an (m x k) matrix by a (k x n) matrix requires 2mkn FLOPs.
 
 For sequence length $S$:
 
-1. **RMSNorm Operations (4Sd FLOPs per normalization):**
+**RMSNorm Operations (4Sd FLOPs per normalization):**
+
 $$
 \text{FLOPs}_{\text{RMSNorm}} = S \cdot d \text{ (square)} + S \cdot d \text{ (sum)} + S \cdot d \text{ (div)} + S \cdot d \text{ (scale)} = 4Sd
 $$
 
-2. **Query Projection (W_Q is d x d):**
+**Query Projection (W_Q is d x d):**
+
 $$
 \text{FLOPs}_Q = 2 S d^2
 $$
 
-3. **Key & Value Projections (W_K, W_V are d x rd):**
+**Key & Value Projections (W_K, W_V are d x rd):**
+
 $$
 \text{FLOPs}_{KV} = 2 \times \left( 2 S d \cdot (r d) \right) = 4 r S d^2 \quad \left(\text{For } r = \frac{1}{8}, \text{ FLOPs}_{KV} = 0.5 S d^2\right)
 $$
 
-4. **Attention Computations (QK^T and AV):**
+**Attention Computations (QK^T and AV):**
+
 $$
 \text{FLOPs}_{QK^T} = 2 S^2 d, \qquad \text{FLOPs}_{AV} = 2 S^2 d
 $$
 
-5. **Output Projection (W_O is d x d):**
+**Output Projection (W_O is d x d):**
+
 $$
 \text{FLOPs}_O = 2 S d^2
 $$
 
-6. **SwiGLU Feed-Forward Network (W_gate, W_up, W_down are d x d_ffn):**
+**SwiGLU Feed-Forward Network (W_gate, W_up, W_down are d x d_ffn):**
+
 $$
 \text{FLOPs}_{\text{FFN}} = 3 \times \left( 2 S d d_{\text{ffn}} \right) = 6 S d d_{\text{ffn}} \quad (\text{For } d_{\text{ffn}} = 3.5d, \text{ FLOPs}_{\text{FFN}} = 21 S d^2)
 $$
@@ -1454,8 +1466,8 @@ In transformer self-attention, the dot-product $\text{Attn}(Q, K) = Q K^T$ is pe
 ```
 
 #### Why RoPE Cannot Be Applied to Weights:
-1. **Dynamic Position Dependence:** Weight matrices W_Q and W_K (both in R^{d x d}) are static, learned parameters shared universally across all tokens. In contrast, the token position m changes dynamically for every token in a sentence. Rotation must be token-specific.
-2. **Relative Distance Encoding:** Applying rotation matrices R_m and R_n to vectors ensures that their product encodes strictly the relative displacement (n - m) directly into the attention inner product:
+**Dynamic Position Dependence:** Weight matrices W_Q and W_K (both in R^{d x d}) are static, learned parameters shared universally across all tokens. In contrast, the token position m changes dynamically for every token in a sentence. Rotation must be token-specific.
+**Relative Distance Encoding:** Applying rotation matrices R_m and R_n to vectors ensures that their product encodes strictly the relative displacement (n - m) directly into the attention inner product:
 
 $$
 R_{\Theta, m}^T \; R_{\Theta, n} = R_{\Theta, \; n-m}
@@ -1479,16 +1491,20 @@ R_{\Theta, m} = \begin{pmatrix}
 \end{pmatrix}
 $$
 
-1. **Token Position Index (m):** The integer index of the token in the sequence (m = 0, 1, 2, ...).
-2. **Base Channel Frequencies:** Dimension-dependent base frequencies defined geometrically:
+**Token Position Index (m):** The integer index of the token in the sequence (m = 0, 1, 2, ...).
+**Base Channel Frequencies:** Dimension-dependent base frequencies defined geometrically:
+
 $$
 \theta_i = 10000^{-2(i-1)/d} \quad \text{for } i \in \{1, 2, \dots, d/2\}
 $$
-3. **2D Coordinate Subspaces:** The matrix groups vector elements into 2D pairs:
+
+**2D Coordinate Subspaces:** The matrix groups vector elements into 2D pairs:
+
 $$
 (q_1, q_2), \; (q_3, q_4), \; \dots, \; (q_{d-1}, q_d)
 $$
-   and rotates each pair in its own 2D plane by angle $\alpha_i = m \theta_i$.
+
+and rotates each pair in its own 2D plane by angle $\alpha_i = m \theta_i$.
 
 ---
 
@@ -1497,6 +1513,7 @@ $$
 Consider a query vector $Q_1 = [1, 0, 2, 1, 0, 3]^T$ at sequence position $m = 1$ with head dimension $d = 6$.
 
 #### Step 1: Compute the $d/2 = 3$ Base Frequencies
+
 $$
 \theta_1 = 10000^{-2(1-1)/6} = 10000^0 = \mathbf{1.0}
 $$
@@ -1516,22 +1533,26 @@ $$
 
 #### Step 3: Apply 2D Rotation to Each Coordinate Pair
 
-1. **Pair 1 $(q_1, q_2) = (1, 0)$:**
+**Pair 1 $(q_1, q_2) = (1, 0)$:**
+
 $$
 \begin{pmatrix} \tilde{q}_1 \\ \tilde{q}_2 \end{pmatrix} = \begin{pmatrix} \cos(1.0) & -\sin(1.0) \\ \sin(1.0) & \cos(1.0) \end{pmatrix} \begin{pmatrix} 1 \\ 0 \end{pmatrix} = \begin{pmatrix} 0.540302 \\ 0.841471 \end{pmatrix}
 $$
 
-2. **Pair 2 $(q_3, q_4) = (2, 1)$:**
+**Pair 2 $(q_3, q_4) = (2, 1)$:**
+
 $$
 \begin{pmatrix} \tilde{q}_3 \\ \tilde{q}_4 \end{pmatrix} = \begin{pmatrix} \cos(0.0464) & -\sin(0.0464) \\ \sin(0.0464) & \cos(0.0464) \end{pmatrix} \begin{pmatrix} 2 \\ 1 \end{pmatrix} \approx \begin{pmatrix} 2(0.9989) - 1(0.0464) \\ 2(0.0464) + 1(0.9989) \end{pmatrix} = \begin{pmatrix} 1.9514 \\ 1.0917 \end{pmatrix}
 $$
 
-3. **Pair 3 $(q_5, q_6) = (0, 3)$:**
+**Pair 3 $(q_5, q_6) = (0, 3)$:**
+
 $$
 \begin{pmatrix} \tilde{q}_5 \\ \tilde{q}_6 \end{pmatrix} = \begin{pmatrix} \cos(0.00215) & -\sin(0.00215) \\ \sin(0.00215) & \cos(0.00215) \end{pmatrix} \begin{pmatrix} 0 \\ 3 \end{pmatrix} \approx \begin{pmatrix} -3(0.00215) \\ 3(0.99999) \end{pmatrix} = \begin{pmatrix} -0.00646 \\ 2.99999 \end{pmatrix}
 $$
 
 #### Step 4: Final Rotated Vector
+
 $$
 \tilde{Q}_1 \approx \begin{bmatrix} 0.5403, & 0.8415, & 1.9514, & 1.0917, & -0.0065, & 3.0000 \end{bmatrix}^T
 $$
@@ -1546,33 +1567,41 @@ $$
 \langle f(Q, m), \; f(K, n) \rangle = g(Q, K, m - n)
 $$
 
-1. **Complex Number Embedding:** A 2D real coordinate pair $q = (q_1, q_2)^T$ is mapped to a single complex number:
+**Complex Number Embedding:** A 2D real coordinate pair $q = (q_1, q_2)^T$ is mapped to a single complex number:
+
 $$
 q_{\mathbb{C}} = q_1 + i q_2
 $$
+
 The standard Euclidean inner product equals the real part of the complex product with the complex conjugate:
+
 $$
 \langle q, k \rangle = \text{Re}\left( q_{\mathbb{C}} \cdot k_{\mathbb{C}}^* \right)
 $$
 
-2. **Phase Rotation:** We encode position $m$ by multiplying by the unitary complex phase factor $e^{i m \theta}$:
+**Phase Rotation:** We encode position $m$ by multiplying by the unitary complex phase factor $e^{i m \theta}$:
+
 $$
 f(q, m) = q_{\mathbb{C}} \cdot e^{i m \theta}
 $$
 
-3. **Invariance Proof:**
+**Invariance Proof:**
+
 $$
 \langle f(q, m), \; f(k, n) \rangle = \text{Re}\left( (q_{\mathbb{C}} e^{i m \theta}) \cdot (k_{\mathbb{C}} e^{i n \theta})^* \right) = \text{Re}\left( q_{\mathbb{C}} k_{\mathbb{C}}^* \cdot e^{i(m - n)\theta} \right)
 $$
-   Absolute positions $m$ and $n$ drop out, leaving strictly the relative displacement $(m - n)$.
 
-4. **Matrix Realization via Euler's Identity:**
+Absolute positions $m$ and $n$ drop out, leaving strictly the relative displacement $(m - n)$.
 
-   Using Euler's formula, the complex exponential expands as:
+**Matrix Realization via Euler's Identity:**
+
+Using Euler's formula, the complex exponential expands as:
+
 $$
 f(q, m) = (q_1 + i q_2)(\cos(m\theta) + i \sin(m\theta)) = (q_1 \cos(m\theta) - q_2 \sin(m\theta)) + i (q_1 \sin(m\theta) + q_2 \cos(m\theta))
 $$
-   Converting back to matrix notation yields the 2D rotation block $R_{\Theta, m}$.
+
+Converting back to matrix notation yields the 2D rotation block $R_{\Theta, m}$.
 
 ---
 
@@ -1611,6 +1640,7 @@ $$
 $$
 
 Where:
+
 $$
 \Theta = [\theta_1, \theta_1, \theta_2, \theta_2, \dots, \theta_{d/2}, \theta_{d/2}]^T \in \mathbb{R}^d
 $$
@@ -1755,28 +1785,34 @@ As depth increases ($L > 32$), residual accumulation dilutes original lexical id
 
 #### 7.5.2 Mathematical Formulation & Forward Pass
 
-1. **Pre-Layer Representation:**
+**Pre-Layer Representation:**
+
 $$
 p_l = \frac{1}{\sqrt{2}} \left( e_{\text{lookup}}^{(l)} + W_{\text{proj}}^{(l)} e_0 \right) \in \mathbb{R}^{d_{\text{ple}}}
 $$
 
-2. **State-Dependent Gating & Hadamard Integration:**
+**State-Dependent Gating & Hadamard Integration:**
+
 $$
 g_l = \sigma(W_g h_l'') \in (0, 1)^{d_{\text{ple}}}
 $$
+
 $$
 v_l = g_l \odot p_l \in \mathbb{R}^{d_{\text{ple}}}
 $$
+
 $$
 h_{l+1} = h_l'' + \text{RMSNorm}(W_{\text{out}} v_l)
 $$
 
 #### 7.5.3 Why the Hadamard Product Is Structurally Mandatory
 
-- **Independent Dimension-Wise Selection:** Allows the model to independently open or close individual feature axes (e.g., maintaining semantic entity category while filtering grammatical tense):
+**Independent Dimension-Wise Selection:** Allows the model to independently open or close individual feature axes (e.g., maintaining semantic entity category while filtering grammatical tense):
+
 $$
   \frac{\partial v_{l,i}}{\partial p_{l,i}} = g_{l,i} \in (0, 1)
 $$
+
 - **Preserves Coordinate Disentanglement:** Element-wise multiplication does not rotate or blend features across orthogonal axes.
 - **Zero Heavy Compute:** Requires only **$d_{\text{ple}}$ FLOPs** instead of dense matrix multiplication.
 
