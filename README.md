@@ -1,6 +1,6 @@
 # Modern Large Language Model Architectures & Distributed Systems: The Complete Technical Compendium
 
-**A Deep Mathematical, Systems-Level, and Architectural Synthesis of Quantization, State Space Models (Mamba), Distributed Parallelism (3D/4D & ZeRO), Inference Economics & PagedAttention, and Novel Transformer Topologies**
+**A Deep Mathematical, Systems-Level, and Architectural Synthesis of Quantization, State Space Models (Mamba), Distributed Parallelism (3D/4D & ZeRO), Inference Economics & PagedAttention, Rotary Position Embeddings (RoPE), and the Gemma 4 Frontier Architecture Suite**
 
 ---
 
@@ -87,19 +87,29 @@
     - [5.6.3 Copy-on-Write (CoW) Forking & Parallel Sampling](#563-copy-on-write-cow-forking--parallel-sampling)
     - [5.6.4 Prefix Caching (Prompt Caching)](#564-prefix-caching-prompt-caching)
   - [5.7 Continuous (Iteration-Level) Batching vs. Static Batching](#57-continuous-iteration-level-batching-vs-static-batching)
-- [6. Module V: Novel Transformer Topologies — Per-Layer Embeddings (PLE) in Gemma 4](#6-module-v-novel-transformer-topologies--per-layer-embeddings-ple-in-gemma-4)
-  - [6.1 Motivation: Decoupling Capacity from FLOPs & Eliminating Identity Dilution](#61-motivation-decoupling-capacity-from-flops--eliminating-identity-dilution)
-  - [6.2 Mathematical Formulation & Forward Pass](#62-mathematical-formulation--forward-pass)
-    - [6.2.1 Pre-Layer Representation](#621-pre-layer-representation)
-    - [6.2.2 State-Dependent Gating & Integration](#622-state-dependent-gating--integration)
-  - [6.3 Deep Dive: Why the Hadamard Product Is Structurally Mandatory](#63-deep-dive-why-the-hadamard-product-is-structurally-mandatory)
-  - [6.4 Information Retention & Semantic Disambiguation Dynamics](#64-information-retention--semantic-disambiguation-dynamics)
-  - [6.5 Structural Comparison: Standard Transformer vs. Gemma 4 PLE](#65-structural-comparison-standard-transformer-vs-gemma-4-ple)
-- [7. Module VI: Cross-Disciplinary Synthesis & Engineering Playbook](#7-module-vi-cross-disciplinary-synthesis--engineering-playbook)
-  - [7.1 Full Model Lifecycle Workflow](#71-full-model-lifecycle-workflow)
-  - [7.2 Systems Engineering Decision Flowchart](#72-systems-engineering-decision-flowchart)
-  - [7.3 Comprehensive Glossary of Symbols & Notation](#73-comprehensive-glossary-of-symbols--notation)
-  - [7.4 References & Primary Sources](#74-references--primary-sources)
+- [6. Module V: Positional Encodings & Rotary Position Embedding (RoPE)](#6-module-v-positional-encodings--rotary-position-embedding-rope)
+  - [6.1 The Fundamental Architectural Principle: Vectors vs. Weights](#61-the-fundamental-architectural-principle-vectors-vs-weights)
+  - [6.2 The Block-Diagonal 2D Rotation Matrix Formulation](#62-the-block-diagonal-2d-rotation-matrix-formulation)
+  - [6.3 Step-by-Step Numerical Example (d = 6 at Position m = 1)](#63-step-by-step-numerical-example-d--6-at-position-m--1)
+  - [6.4 Complex Representation & Mathematical Derivation via Euler's Formula](#64-complex-representation--mathematical-derivation-via-eulers-formula)
+  - [6.5 Mathematical Proof: Why RoPE Must Be Applied to Both Q and K](#65-mathematical-proof-why-rope-must-be-applied-to-both-q-and-k)
+  - [6.6 Hardware-Efficient Implementation via Element-Wise Vector Operations](#66-hardware-efficient-implementation-via-element-wise-vector-operations)
+- [7. Module VI: Modern Frontier Topologies — The Gemma 4 Architecture Suite](#7-module-vi-modern-frontier-topologies--the-gemma-4-architecture-suite)
+  - [7.1 The Gemma 4 Family Taxonomy (E2B, E4B, 31B Dense, 26B A4B MoE)](#71-the-gemma-4-family-taxonomy-e2b-e4b-31b-dense-26b-a4b-moe)
+  - [7.2 Interleaved Local Sliding Window & Global Attention (K=V Fusion)](#72-interleaved-local-sliding-window--global-attention-kv-fusion)
+  - [7.3 Partitioned / Low-Frequency-Pruned RoPE (p-RoPE)](#73-partitioned--low-frequency-pruned-rope-p-rope)
+  - [7.4 Mixture of Experts (MoE) Architecture in Gemma 4 26B A4B](#74-mixture-of-experts-moe-architecture-in-gemma-4-26b-a4b)
+  - [7.5 Per-Layer Embeddings (PLE) in Gemma 4 E2B & E4B](#75-per-layer-embeddings-ple-in-gemma-4-e2b--e4b)
+    - [7.5.1 Motivation: Decoupling Capacity from FLOPs](#751-motivation-decoupling-capacity-from-flops)
+    - [7.5.2 Mathematical Formulation & Forward Pass](#752-mathematical-formulation--forward-pass)
+    - [7.5.3 Why the Hadamard Product Is Structurally Mandatory](#753-why-the-hadamard-product-is-structurally-mandatory)
+    - [7.5.4 Information Retention & Semantic Disambiguation Dynamics](#754-information-retention--semantic-disambiguation-dynamics)
+  - [7.6 Multi-Token Prediction (MTP) Speculative Drafters](#76-multi-token-prediction-mtp-speculative-drafters)
+- [8. Module VII: Cross-Disciplinary Synthesis & Engineering Playbook](#8-module-vii-cross-disciplinary-synthesis--engineering-playbook)
+  - [8.1 Full Model Lifecycle Workflow](#81-full-model-lifecycle-workflow)
+  - [8.2 Systems Engineering Decision Flowchart](#82-systems-engineering-decision-flowchart)
+  - [8.3 Comprehensive Glossary of Symbols & Notation](#83-comprehensive-glossary-of-symbols--notation)
+  - [8.4 References & Primary Sources](#84-references--primary-sources)
 
 ---
 
@@ -422,7 +432,7 @@ GPTQ quantizes weight matrices column-by-column while continuously compensating 
    $$
 
 4. **Cholesky Decomposition ($H^{-1} = L L^T$):**
-   GPTQ adds a diagonal damping term $\lambda I$ ($\lambda \approx 1\%\text{ of average diagonal}$) to ensure numerical stability and computes the Cholesky factor $L$ once, eliminating matrix inversion during runtime.
+   GPTQ adds a diagonal damping term $\lambda I$ (where $\lambda \approx 0.01 \cdot \text{mean}(\text{diag}(H))$) to ensure numerical stability and computes the Cholesky factor $L$ once, eliminating matrix inversion during runtime.
 
 #### 2.5.2 GGUF & K-Quants: Hierarchical Block-Wise Scaling
 
@@ -1261,7 +1271,7 @@ Caching Key and Value vectors reduces generation to strict **$O(L)$ total operat
 #### 5.4.1 Mathematical Memory Footprint Formulation
 
 $$
-\text{KV Cache Size (Bytes)} = 2 \times \underbrace{2}_{\text{K and V}} \times n_{\text{layers}} \times n_{\text{kv\_heads}} \times d_{\text{head}} \times S \times B \times b_{\text{elem}}
+\text{KV Cache Size (Bytes)} = 2 \times \underbrace{2}_{\text{K and V}} \times n_{\text{layers}} \times n_{kv} \times d_{\text{head}} \times S \times B \times b_{\text{elem}}
 $$
 
 Where $b_{\text{elem}} = 2\text{ bytes}$ in 16-bit precision.
@@ -1424,21 +1434,279 @@ Step t+2: [Req 4 Step]    [Req 2 Step] [Req 3 Step]
 
 ---
 
-## 6. Module V: Novel Transformer Topologies — Per-Layer Embeddings (PLE) in Gemma 4
+## 6. Module V: Positional Encodings & Rotary Position Embedding (RoPE)
 
-### 6.1 Motivation: Decoupling Capacity from FLOPs & Eliminating Identity Dilution
+In transformer self-attention, the dot-product $\text{Attn}(Q, K) = Q K^T$ is permutation-equivariant: shuffling the input token sequence produces the exact same attention weights. To encode word order and relative syntactic distances, modern architectures inject **Rotary Position Embedding (RoPE)** (Su et al., 2021).
 
-In standard Transformers, input tokens are converted to continuous vectors only once at layer $0$:
+### 6.1 The Fundamental Architectural Principle: Vectors vs. Weights
+
+> [!IMPORTANT]
+> **Core Architectural Rule:** RoPE is applied **strictly to the dynamic Query ($Q$) and Key ($K$) activation vectors** after linear projection. It is **never applied to the static projection weight matrices ($W_Q, W_K$)**.
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          RoPE IN THE FORWARD PASS                           │
+│                                                                             │
+│   Input Token X_m at Position m                                             │
+│         │                                                                   │
+│         ├──► [ Linear W_Q (Static) ] ──► Raw Vector Q_m ──► [ RoPE R_m ] ──► Rotated Vector Q̃_m ──┐
+│         │                                                                                          ├──► Dot Product Score(m, n)
+│         └──► [ Linear W_K (Static) ] ──► Raw Vector K_m ──► [ RoPE R_m ] ──► Rotated Vector K̃_m ──┘
+│                                                                                                    (Encodes relative lag n - m!)
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Why RoPE Cannot Be Applied to Weights:
+1. **Dynamic Position Dependence:** Weight matrices $W_Q \in \mathbb{R}^{d \times d}$ and $W_K \in \mathbb{R}^{d \times d}$ are static, learned parameters shared universally across all tokens. In contrast, the token position $m \in \{0, 1, 2, \dots, L\}$ changes dynamically for every token in a sentence. Rotation must be token-specific.
+2. **Relative Distance Encoding:** Applying rotation matrices $R_{\Theta, m}$ and $R_{\Theta, n}$ to vectors ensures that $R_{\Theta, m}^T R_{\Theta, n} = R_{\Theta, n-m}$, embedding relative token displacement $(n - m)$ directly into the attention inner product.
+
+---
+
+### 6.2 The Block-Diagonal 2D Rotation Matrix Formulation
+
+For an attention head of dimension $d$ (where $d$ is an even integer), RoPE constructs a $d \times d$ orthogonal block-diagonal rotation matrix $R_{\Theta, m}$ composed of $d/2$ independent 2D rotation sub-matrices:
+
+$$
+R_{\Theta, m} = \begin{pmatrix}
+\cos(m\theta_1) & -\sin(m\theta_1) & 0 & 0 & \cdots & 0 & 0 \\
+\sin(m\theta_1) & \cos(m\theta_1) & 0 & 0 & \cdots & 0 & 0 \\
+0 & 0 & \cos(m\theta_2) & -\sin(m\theta_2) & \cdots & 0 & 0 \\
+0 & 0 & \sin(m\theta_2) & \cos(m\theta_2) & \cdots & 0 & 0 \\
+\vdots & \vdots & \vdots & \vdots & \ddots & \vdots & \vdots \\
+0 & 0 & 0 & 0 & \cdots & \cos(m\theta_{d/2}) & -\sin(m\theta_{d/2}) \\
+0 & 0 & 0 & 0 & \cdots & \sin(m\theta_{d/2}) & \cos(m\theta_{d/2})
+\end{pmatrix}
+$$
+
+1. **Token Position Index ($m$):** The integer index of the token in the sequence ($m = 0, 1, 2, \dots$).
+2. **Base Channel Frequencies ($\theta_i$):** Dimension-dependent base frequencies defined geometrically:
+   $$
+   \theta_i = 10000^{-2(i-1)/d} \quad \text{for } i \in \{1, 2, \dots, d/2\}
+   $$
+3. **2D Coordinate Subspaces:** The matrix groups vector elements into 2D pairs:
+   $$
+   (q_1, q_2), \; (q_3, q_4), \; \dots, \; (q_{d-1}, q_d)
+   $$
+   and rotates each pair in its own 2D plane by angle $\alpha_i = m \theta_i$.
+
+---
+
+### 6.3 Step-by-Step Numerical Example (d = 6 at Position m = 1)
+
+Consider a query vector $Q_1 = [1, 0, 2, 1, 0, 3]^T$ at sequence position $m = 1$ with head dimension $d = 6$.
+
+#### Step 1: Compute the $d/2 = 3$ Base Frequencies
+$$
+\theta_1 = 10000^{-2(1-1)/6} = 10000^0 = \mathbf{1.0}
+$$
+
+$$
+\theta_2 = 10000^{-2(2-1)/6} = 10000^{-1/3} \approx \mathbf{0.046416}
+$$
+
+$$
+\theta_3 = 10000^{-2(3-1)/6} = 10000^{-2/3} \approx \mathbf{0.002154}
+$$
+
+#### Step 2: Compute Rotation Angles ($m \theta_i$ for $m = 1$)
+- Plane 1: $\alpha_1 = 1 \times 1.0 = 1.0\text{ rad}$
+- Plane 2: $\alpha_2 = 1 \times 0.046416 = 0.046416\text{ rad}$
+- Plane 3: $\alpha_3 = 1 \times 0.002154 = 0.002154\text{ rad}$
+
+#### Step 3: Apply 2D Rotation to Each Coordinate Pair
+
+1. **Pair 1 $(q_1, q_2) = (1, 0)$:**
+   $$
+   \begin{pmatrix} \tilde{q}_1 \\ \tilde{q}_2 \end{pmatrix} = \begin{pmatrix} \cos(1.0) & -\sin(1.0) \\ \sin(1.0) & \cos(1.0) \end{pmatrix} \begin{pmatrix} 1 \\ 0 \end{pmatrix} = \begin{pmatrix} 0.540302 \\ 0.841471 \end{pmatrix}
+   $$
+
+2. **Pair 2 $(q_3, q_4) = (2, 1)$:**
+   $$
+   \begin{pmatrix} \tilde{q}_3 \\ \tilde{q}_4 \end{pmatrix} = \begin{pmatrix} \cos(0.0464) & -\sin(0.0464) \\ \sin(0.0464) & \cos(0.0464) \end{pmatrix} \begin{pmatrix} 2 \\ 1 \end{pmatrix} \approx \begin{pmatrix} 2(0.9989) - 1(0.0464) \\ 2(0.0464) + 1(0.9989) \end{pmatrix} = \begin{pmatrix} 1.9514 \\ 1.0917 \end{pmatrix}
+   $$
+
+3. **Pair 3 $(q_5, q_6) = (0, 3)$:**
+   $$
+   \begin{pmatrix} \tilde{q}_5 \\ \tilde{q}_6 \end{pmatrix} = \begin{pmatrix} \cos(0.00215) & -\sin(0.00215) \\ \sin(0.00215) & \cos(0.00215) \end{pmatrix} \begin{pmatrix} 0 \\ 3 \end{pmatrix} \approx \begin{pmatrix} -3(0.00215) \\ 3(0.99999) \end{pmatrix} = \begin{pmatrix} -0.00646 \\ 2.99999 \end{pmatrix}
+   $$
+
+#### Step 4: Final Rotated Vector
+$$
+\tilde{Q}_1 \approx \begin{bmatrix} 0.5403, & 0.8415, & 1.9514, & 1.0917, & -0.0065, & 3.0000 \end{bmatrix}^T
+$$
+
+---
+
+### 6.4 Complex Representation & Mathematical Derivation via Euler's Formula
+
+RoPE was derived by seeking a function $f(x, m)$ such that the inner product between query at $m$ and key at $n$ depends purely on $(m - n)$:
+
+$$
+\langle f(Q, m), \; f(K, n) \rangle = g(Q, K, m - n)
+$$
+
+1. **Complex Number Embedding:** A 2D real coordinate pair $q = (q_1, q_2)^T$ is mapped to a single complex number:
+   $$
+   q_{\mathbb{C}} = q_1 + i q_2
+   $$
+   The standard Euclidean inner product equals the real part of the complex product with the complex conjugate:
+   $$
+   \langle q, k \rangle = \text{Re}\left( q_{\mathbb{C}} \cdot k_{\mathbb{C}}^* \right)
+   $$
+
+2. **Phase Rotation:** We encode position $m$ by multiplying by the unitary complex phase factor $e^{i m \theta}$:
+   $$
+   f(q, m) = q_{\mathbb{C}} \cdot e^{i m \theta}
+   $$
+
+3. **Invariance Proof:**
+   $$
+   \langle f(q, m), \; f(k, n) \rangle = \text{Re}\left( (q_{\mathbb{C}} e^{i m \theta}) \cdot (k_{\mathbb{C}} e^{i n \theta})^* \right) = \text{Re}\left( q_{\mathbb{C}} k_{\mathbb{C}}^* \cdot e^{i(m - n)\theta} \right)
+   $$
+   Absolute positions $m$ and $n$ drop out, leaving strictly the relative displacement $(m - n)$.
+
+4. **Matrix Realization via Euler's Identity ($e^{i m \theta} = \cos(m\theta) + i \sin(m\theta)$):**
+   $$
+   f(q, m) = (q_1 + i q_2)(\cos(m\theta) + i \sin(m\theta)) = (q_1 \cos(m\theta) - q_2 \sin(m\theta)) + i (q_1 \sin(m\theta) + q_2 \cos(m\theta))
+   $$
+   Converting back to matrix notation yields the 2D rotation block $R_{\Theta, m}$.
+
+---
+
+### 6.5 Mathematical Proof: Why RoPE Must Be Applied to Both Q and K
+
+Why not save compute by applying rotation only to Query $Q$?
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                 WHY ROTATION MUST BE APPLIED TO BOTH Q AND K                │
+│                                                                             │
+│  Scenario 1: Rotate BOTH Q and K (Correct - Translation Invariant)          │
+│   Score(m, n) = (R_m Q_m)^T (R_n K_n) = Q_m^T (R_m^T R_n) K_n              │
+│               = Q_m^T (R_{-m} R_n) K_n = Q_m^T R_{n-m} K_n                  │
+│   ──► Inner product depends purely on RELATIVE distance (n - m)!            │
+│                                                                             │
+│  Scenario 2: Rotate ONLY Q (Incorrect - Fails Relative Invariance)          │
+│   Score(m, n) = (R_m Q_m)^T (K_n) = Q_m^T R_m^T K_n = Q_m^T R_{-m} K_n     │
+│   ──► Inner product depends on ABSOLUTE position m.                         │
+│   ──► Key position n is absent! Model cannot measure distance!              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### The Clock Hands Analogy:
+- **Both Rotated:** Token position $m$ rotates Query hand by $m^\circ$; position $n$ rotates Key hand by $n^\circ$. The dot product measures the **relative angle between the two clock hands** ($(n - m)^\circ$). Tokens separated by 2 positions at indices $(1, 3)$ or $(101, 103)$ produce the exact same angle ($2^\circ$).
+- **Only Q Rotated:** Query hand rotates by $m^\circ$, but Key hand stays pinned at $12\text{ o'clock}$ ($0^\circ$). The measured angle is always $m^\circ$, destroying distance context.
+
+---
+
+### 6.6 Hardware-Efficient Implementation via Element-Wise Vector Operations
+
+Materializing the sparse $d \times d$ matrix $R_{\Theta, m}$ in GPU memory is slow. Production engines (PyTorch, FlashAttention, vLLM) compute RoPE using fast element-wise vector operations:
+
+$$
+\tilde{Q}_m = Q_m \odot \cos(m\Theta) + \tilde{Q}_{\text{swap}} \odot \sin(m\Theta)
+$$
+
+Where:
+$$
+\Theta = [\theta_1, \theta_1, \theta_2, \theta_2, \dots, \theta_{d/2}, \theta_{d/2}]^T \in \mathbb{R}^d
+$$
+
+$$
+\tilde{Q}_{\text{swap}} = [-q_2, \; q_1, \; -q_4, \; q_3, \; \dots, \; -q_d, \; q_{d-1}]^T
+$$
+
+---
+
+## 7. Module VI: Modern Frontier Topologies — The Gemma 4 Architecture Suite
+
+The **Gemma 4** open-model family introduces architectural innovations designed to maximize parameter capacity and generation throughput while remaining hardware-efficient.
+
+### 7.1 The Gemma 4 Family Taxonomy (E2B, E4B, 31B Dense, 26B A4B MoE)
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           GEMMA 4 MODEL ARCHITECTURES                       │
+│                                                                             │
+│  [Gemma 4 - E2B & E4B (Dense with PLE)]                                     │
+│   - Target: Mobile & Edge Devices (Under 4 GB VRAM)                         │
+│   - Innovation: Per-Layer Embeddings (PLE) scale effective parameter count  │
+│     to 2B / 4B while executing at the FLOP footprint of a sub-1B trunk.     │
+│                                                                             │
+│  [Gemma 4 - 31B (Flagship Dense)]                                           │
+│   - Target: High-Capacity Reasoning & Coding                                │
+│   - Fully dense 31B parameter model with interleaved local/global attention.│
+│                                                                             │
+│  [Gemma 4 - 26B A4B (Mixture of Experts - MoE)]                             │
+│   - Target: High-Throughput Server Serving                                  │
+│   - Total Parameters: 26 Billion | Active per Token: 4 Billion              │
+│   - Dynamic top-k expert routing with load balancing.                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 7.2 Interleaved Local Sliding Window & Global Attention (K=V Fusion)
+
+Standard global attention incurs $O(L^2)$ computation for context length $L$. Gemma 4 interleaves **Local Sliding Window Attention** with **Global Full-Context Attention**:
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    GEMMA 4 ATTENTION PATTERN INTERLEAVING                   │
+│                                                                             │
+│  Layer 0: Local Sliding Window Attention (e.g., Window = 512 or 1024 tokens)│
+│  Layer 1: Local Sliding Window Attention                                    │
+│  Layer 2: Local Sliding Window Attention                                    │
+│  Layer 3: Global Full Attention (K=V Weight Fusion + Full Context Access)   │
+│  ...                                                                        │
+│  Layer L-1 (Final Layer): ALWAYS Global Full Attention Layer                │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+1. **Sliding Window Size:** Small models (E2B, E4B) use a local window of $512$ tokens; large models (26B A4B, 31B) use $1024$ tokens. Compute complexity drops from $O(L^2)$ to $O(L \cdot W)$.
+2. **$K=V$ Global Attention Fusion:** In global attention layers, Key projections are set equal to Value projections ($K = V$), halving KV cache memory footprint for full-context layers.
+3. **Guaranteed Global Aggregation:** The final layer is always a global attention layer, ensuring representations across the entire context window are synthesized before generating predictions.
+
+---
+
+### 7.3 Partitioned / Low-Frequency-Pruned RoPE (p-RoPE)
+
+In standard RoPE, high channel dimensions have near-zero frequency ($\theta \approx 0$), resulting in negligible rotation over moderate context lengths.
+
+**p-RoPE (Partitioned RoPE)** applies RoPE only to the high-frequency subspace while pruning low-frequency channels or reallocating them for lexical feature embeddings, improving long-context stability.
+
+---
+
+### 7.4 Mixture of Experts (MoE) Architecture in Gemma 4 26B A4B
+
+In Gemma 4 26B A4B, the dense FFN block is replaced by a sparse Mixture-of-Experts layer with a top-$k$ Softmax Router:
+
+```text
+Input Activation x ──┬──► [ Router Gate: G(x) = Softmax(TopK(x W_gate)) ]
+                     │                   │
+                     ├──► [ Expert 1 ] ──┤
+                     ├──► [ Expert 2 ] ──┼──► Weighted Sum Y = sum_{i=1}^k G(x)_i Expert_i(x)
+                     │    ...            │
+                     └──► [ Expert E ] ──┘
+```
+
+- Total parameters: $26\text{ Billion}$.
+- Active parameters per token: $4\text{ Billion}$.
+- **Throughput Advantage:** Delivers the reasoning capacity of a $26\text{B}$ model at the serving latency and FLOP cost of a $4\text{B}$ dense model.
+
+---
+
+### 7.5 Per-Layer Embeddings (PLE) in Gemma 4 E2B & E4B
+
+#### 7.5.1 Motivation: Decoupling Capacity from FLOPs
+
+In standard Transformers, input tokens are mapped to continuous vectors *only once* at layer $0$:
 
 $$
 h_L = h_0 + \sum_{l=0}^{L-1} f_l(h_l)
 $$
 
 As depth increases ($L > 32$), residual accumulation dilutes original lexical identity. **Per-Layer Embeddings (PLE)** decouple parameter capacity from per-token compute by providing dedicated embedding tables at each layer.
-
----
-
-### 6.2 Mathematical Formulation & Forward Pass
 
 ```text
                               [ Token ID: t ]
@@ -1482,6 +1750,8 @@ As depth increases ($L > 32$), residual accumulation dilutes original lexical id
                           [ Updated State h_(l+1) ]
 ```
 
+#### 7.5.2 Mathematical Formulation & Forward Pass
+
 1. **Pre-Layer Representation:**
    $$
    p_l = \frac{1}{\sqrt{2}} \left( e_{\text{lookup}}^{(l)} + W_{\text{proj}}^{(l)} e_0 \right) \in \mathbb{R}^{d_{\text{ple}}}
@@ -1498,59 +1768,61 @@ As depth increases ($L > 32$), residual accumulation dilutes original lexical id
    h_{l+1} = h_l'' + \text{RMSNorm}(W_{\text{out}} v_l)
    $$
 
----
+#### 7.5.3 Why the Hadamard Product Is Structurally Mandatory
 
-### 6.3 Deep Dive: Why the Hadamard Product Is Structurally Mandatory
+- **Independent Dimension-Wise Selection:** Allows the model to independently open or close individual feature axes (e.g., maintaining semantic entity category while filtering grammatical tense):
+  $$
+  \frac{\partial v_{l,i}}{\partial p_{l,i}} = g_{l,i} \in (0, 1)
+  $$
+- **Preserves Coordinate Disentanglement:** Element-wise multiplication does not rotate or blend features across orthogonal axes.
+- **Zero Heavy Compute:** Requires only **$d_{\text{ple}}$ FLOPs** instead of dense matrix multiplication.
 
-Let $\odot$ denote the Hadamard product ($[u \odot v]_i = u_i \cdot v_i$).
-
-1. **Independent Dimension-Wise Control:**
-   $$
-   \frac{\partial v_{l,i}}{\partial p_{l,i}} = g_{l,i} \in (0, 1)
-   $$
-   Scalar gating forces uniform attenuation across all channels, whereas the Hadamard product gives the network independent control over every semantic feature axis.
-
-2. **Preservation of Coordinate Basis Disentanglement:**
-   Unlike dense matrix projection $W p_l$ which rotates coordinate axes, the Hadamard product scales orthogonal features along their intrinsic axes without feature cross-contamination.
-
-3. **Computational Efficiency:**
-   Requires exactly **$d_{\text{ple}}$ FLOPs** instead of $O(d_{\text{model}} \cdot d_{\text{ple}})$ matrix multiply FLOPs.
-
----
-
-### 6.4 Information Retention & Semantic Disambiguation Dynamics
+#### 7.5.4 Information Retention & Semantic Disambiguation Dynamics
 
 ```text
 Case Study: "The river bank overflowed"
-- Layer 2 (Morphology/Syntax): Gate g_2 -> 1.0 (OPENS) to inject raw lexical tokens.
-- Layer 24 (Deep Contextual Reasoning): Context has resolved "river bank" = [Shoreline].
+- Early Layers (Syntax): Gate g_2 -> 1.0 (OPENS) to inject raw syntax embeddings.
+- Deep Layers (Semantics): Context has resolved "river bank" = [Shoreline].
   Gate g_24 -> 0.0 (CLOSES) to prevent static financial word embeddings from corrupting the contextual state!
 ```
 
 ---
 
-### 6.5 Structural Comparison: Standard Transformer vs. Gemma 4 PLE
+### 7.6 Multi-Token Prediction (MTP) Speculative Drafters
 
-| Dimension | Standard Transformer | Gemma 4 with Per-Layer Embeddings (PLE) |
-| :--- | :--- | :--- |
-| **Embedding Lookup** | Single lookup at layer $l = 0$ | Dynamic re-injection at every layer $l \in \{1, \dots, L\}$ |
-| **Parameter vs. Compute Scaling** | Coupled ($\text{Params} \propto \text{FLOPs}$) | Decoupled ($\text{Capacity} \gg \text{Compute FLOPs}$) |
-| **Deep Token Representation** | Diluted over deep layers | Retained cleanly across arbitrary depth |
-| **Residual Structure** | Dual-Branch ($\text{Residual} + \text{Attn} + \text{FFN}$) | Triple-Branch ($\text{Residual} + \text{Attn} + \text{FFN} + \text{Gated PLE}$) |
-| **Layer Specialization** | Universal static embedding | Early layers learn syntax; deep layers learn abstract semantics |
+Gemma 4 models integrate native **Multi-Token Prediction (MTP)** drafter modules:
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    MULTI-TOKEN PREDICTION (MTP) SPECULATIVE FLOW            │
+│                                                                             │
+│  Step 1: Target Model Forward Pass (Token t)                                │
+│          Outputs: Token t+1 + Intermediate Hidden State h_t                 │
+│                                                                             │
+│  Step 2: MTP Drafter Head (Lightweight Module)                              │
+│          Takes h_t ──► Autoregressively generates Draft Tokens [t+2, t+3]   │
+│                                                                             │
+│  Step 3: Parallel Verification in Next Forward Pass                         │
+│          Target Model validates [t+1, t+2, t+3] CONCURRENTLY in 1 forward pass!│
+│          ──► Accepted tokens committed instantly (2x - 3x speedup!)         │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+- **Speculative Verification:** Rather than requiring a separate draft model (e.g. speculative decoding with a 1B helper model), Gemma 4 uses internal MTP heads to propose candidates that the trunk model verifies in a single forward pass, achieving **$2\times - 3\times$ lower decode latency**.
 
 ---
 
-## 7. Module VI: Cross-Disciplinary Synthesis & Engineering Playbook
+## 8. Module VII: Cross-Disciplinary Synthesis & Engineering Playbook
 
-### 7.1 Full Model Lifecycle Workflow
+### 8.1 Full Model Lifecycle Workflow
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                    END-TO-END LLM SYSTEMS LIFECYCLE                         │
 │                                                                             │
 │  [Phase 1: Architecture Selection]                                          │
-│   - Pure Attention (Transformer) vs. Selective SSM (Mamba) vs. Hybrid (PLE) │
+│   - Attention (Transformer) vs. Selective SSM (Mamba) vs. Gemma 4 Hybrid    │
+│   - RoPE Vector Rotations + Interleaved Local/Global Attention              │
 │                                                                             │
 │  [Phase 2: Distributed Pre-Training]                                        │
 │   - Precision: BF16 Mixed Precision with FP32 Master Weights                │
@@ -1565,13 +1837,13 @@ Case Study: "The river bank overflowed"
 │  [Phase 4: High-Throughput Inference Serving]                               │
 │   - Serving Engine: PagedAttention + Continuous Iteration-Level Batching    │
 │   - Memory Sharing: Copy-on-Write (Parallel Sampling) + Prefix Caching      │
-│   - Mamba Linear O(1) State vs. Transformer KV Cache Compression            │
+│   - Native Speculative Decoding via Gemma 4 Multi-Token Prediction (MTP)    │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### 7.2 Systems Engineering Decision Flowchart
+### 8.2 Systems Engineering Decision Flowchart
 
 ```text
 Target Deployment Constraints:
@@ -1589,18 +1861,19 @@ Target Deployment Constraints:
 │   └── Parallel Sampling: Copy-on-Write (CoW) page forking
 │
 ├── Edge Device / Consumer Hardware Serving
+│   ├── RAM < 4 GB: Gemma 4 E2B / E4B with Per-Layer Embeddings (PLE)
 │   ├── RAM < 8 GB: GGUF / K-Quants (4-bit or 2-bit offloading to CPU/Metal)
 │   ├── Single GPU 24 GB: 4-Bit GPTQ or AWQ
 │   └── Next-Gen Custom Silicon: BitNet 1.58b Ternary Kernels
 │
 └── Long-Context Streaming / Real-Time Generation
     ├── Unbounded Sequence Processing: Mamba (Selective SSM S6 Block)
-    └── Standard Architecture with Zero Drift: Transformer + Gemma 4 PLE
+    └── High-Speed Decoding: Gemma 4 with Multi-Token Prediction (MTP)
 ```
 
 ---
 
-### 7.3 Comprehensive Glossary of Symbols & Notation
+### 8.3 Comprehensive Glossary of Symbols & Notation
 
 | Symbol | Mathematical Definition | Domain / Systems Role |
 | :--- | :--- | :--- |
@@ -1608,6 +1881,8 @@ Target Deployment Constraints:
 | $\mathbf{\bar{A}}, \mathbf{\bar{B}}$ | Discretized state matrices | Discretized via Zero-Order Hold (ZOH) with step $\Delta$ |
 | $\Delta$ | Step size parameter ($\mathbb{R}^+$) | Timescale resolution; acts as input-dependent gate in Mamba |
 | $\mathbf{\bar{K}}$ | SSM convolution kernel ($\mathbb{R}^L$) | Enables FFT-based parallel sequence training in LTI SSMs |
+| $R_{\Theta, m}$ | Block-diagonal rotation matrix ($\mathbb{R}^{d \times d}$) | Rotates $Q, K$ vectors by position $m$ in RoPE |
+| $\theta_i$ | Geometric base frequency ($10000^{-2(i-1)/d}$) | Frequency scale for $i$-th 2D coordinate plane in RoPE |
 | $s$ | Quantization scale factor ($\mathbb{R}^+$) | Maps continuous interval to discrete integer grid |
 | $z$ | Integer zero-point ($\mathbb{Z}$) | Offsets asymmetric quantized values |
 | $H^{-1}$ | Inverse Hessian matrix ($2 X X^T + \lambda I)^{-1}$ | Second-order sensitivity matrix in GPTQ error redistribution |
@@ -1627,30 +1902,35 @@ Target Deployment Constraints:
 
 ---
 
-### 7.4 References & Primary Sources
+### 8.4 References & Primary Sources
 
 This technical compendium synthesizes theoretical principles, systems implementations, and architectural benchmarks from the following primary publications and engineering references:
 
-1. **Model Quantization & Precision:**
+1. **Rotary Position Embeddings & Attention:**
+   - Jianlin Su, Yu Lu, Shengfeng Pan, Bo Wen, Yunfeng Liu. *"RoFormer: Enhanced Transformer with Rotary Position Embedding."* [arXiv:2104.09864](https://arxiv.org/abs/2104.09864).
+   - Tri Dao, Daniel Y. Fu, Stefano Ermon, Atri Rudra, Christopher Ré. *"FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness."* [NeurIPS 2022 / arXiv:2205.14135](https://arxiv.org/abs/2205.14135).
+
+2. **The Gemma 4 Frontier Architecture Suite:**
+   - Maarten Grootendorst. *"A Visual Guide to Gemma 4."* [Exploring Language Models / Newsletter](https://newsletter.maartengrootendorst.com/p/a-visual-guide-to-gemma-4).
+   - Google DeepMind Gemma Team. *"Gemma 4: Open Model Architecture Suite with Per-Layer Embeddings, MoE, and Multi-Token Prediction."* Technical Report.
+   - Internal Repository: [per_layer_embeddings_gemma4.md](file:///home/backup-279/ML_Basics/per_layer_embeddings_gemma4.md).
+
+3. **Model Quantization & Precision:**
    - Maarten Grootendorst. *"A Visual Guide to Quantization."* [Towards Data Science](https://medium.com/data-science/a-visual-guide-to-quantization-930ebcd9be94).
    - Elias Frantar, Saleh Ashkboos, Torsten Hoefler, Dan Alistarh. *"GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers."* [arXiv:2210.17323](https://arxiv.org/abs/2210.17323).
    - Shuming Ma, Hongyu Wang, Lingxiao Ma, Lei Wang, Wenhui Wang, Saksham Bhatia, Jiayu Ding, Jilong Xue, Furu Wei. *"The Era of 1-bit LLMs: All Large Language Models are in 1.58 Bits."* [arXiv:2402.17764](https://arxiv.org/abs/2402.17764).
 
-2. **State Space Models & Mamba Architectures:**
+4. **State Space Models & Mamba Architectures:**
    - Maarten Grootendorst. *"A Visual Guide to Mamba and State Space Models."* [Towards Data Science](https://medium.com/data-science/a-visual-guide-to-mamba-and-state-space-models-8d0d3f7d3ea6).
    - Albert Gu, Tri Dao. *"Mamba: Linear-Time Sequence Modeling with Selective State Spaces."* [arXiv:2312.00752](https://arxiv.org/abs/2312.00752).
    - Albert Gu, Karan Goel, Christopher Ré. *"Efficiently Modeling Long Sequences with Structured State Spaces (S4)."* [ICLR 2022 / arXiv:2111.00396](https://arxiv.org/abs/2111.00396).
 
-3. **Distributed Systems Parallelism & Hardware Tiling:**
+5. **Distributed Systems Parallelism & Hardware Tiling:**
    - Internal Repository: [parallelism_examples.md](file:///home/backup-279/ML_Basics/parallelism_examples.md) (*Data Parallelism, Megatron-LM Tensor Parallelism, Pipeline Bubbles, Ring Attention Online Softmax, ZeRO-1/2/3, FlashAttention*).
    - Mohammad Shoeybi, Mostofa Patwary, Raul Puri, Patrick LeGresley, Jared Casper, Bryan Catanzaro. *"Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism."* [arXiv:1909.08053](https://arxiv.org/abs/1909.08053).
    - Samyam Rajbhandari, Jeff Rasley, Olatunji Ruwase, Yuxiong He. *"ZeRO: Memory Optimizations Toward Training Trillion Parameter Models."* [SC20 / arXiv:1910.02054](https://arxiv.org/abs/1910.02054).
-   - Tri Dao, Daniel Y. Fu, Stefano Ermon, Atri Rudra, Christopher Ré. *"FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness."* [NeurIPS 2022 / arXiv:2205.14135](https://arxiv.org/abs/2205.14135).
 
-4. **Inference Economics, KV Caching & PagedAttention:**
+6. **Inference Economics, KV Caching & PagedAttention:**
    - Tensor Economics. *"LLM Inference Economics from First Principles."* [Tensor Economics Newsletter](https://www.tensoreconomics.com/p/llm-inference-economics-from-first).
    - Musings with LLMs. *"Understanding KV Cache and PagedAttention in LLMs: A Deep Dive into Efficient Inference."* [Medium](https://medium.com/my-musings-with-llms/understanding-kv-cache-and-paged-attention-in-llms-a-deep-dive-into-efficient-inference-62fa372432ce).
    - Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph E. Gonzalez, Haotong Zhang, Ion Stoica. *"Efficient Memory Management for Large Language Model Serving with PagedAttention (vLLM)."* [SOSP 2023 / arXiv:2309.06180](https://arxiv.org/abs/2309.06180).
-
-5. **Novel Transformer Topologies & Deep Representations:**
-   - Internal Repository: [per_layer_embeddings_gemma4.md](file:///home/backup-279/ML_Basics/per_layer_embeddings_gemma4.md) (*Mathematical formulation, state-dependent gating dynamics, and Hadamard feature filtering in Gemma 4 Per-Layer Embeddings*).
