@@ -1,6 +1,6 @@
 # Modern Large Language Model Architectures & Distributed Systems: The Complete Technical Compendium
 
-**A Rigorous Mathematical, Systems-Level, and Architectural Synthesis of Quantization, State Space Models (Mamba), Distributed Parallelism (3D/4D & ZeRO), Inference Economics & PagedAttention, and Novel Transformer Topologies**
+**A Deep Mathematical, Systems-Level, and Architectural Synthesis of Quantization, State Space Models (Mamba), Distributed Parallelism (3D/4D & ZeRO), Inference Economics & PagedAttention, and Novel Transformer Topologies**
 
 ---
 
@@ -8,28 +8,32 @@
 
 - [1. Foundational Systems Perspective: The Compute & Memory Wall](#1-foundational-systems-perspective-the-compute--memory-wall)
   - [1.1 The Hardware Execution Model: SRAM vs. HBM Hierarchy](#11-the-hardware-execution-model-sram-vs-hbm-hierarchy)
-  - [1.2 The Roofline Model: Arithmetic Intensity & Bottlenecks](#12-the-roofline-model-arithmetic-intensity--bottlenecks)
+  - [1.2 The Roofline Model: Mathematical Formulation of Arithmetic Intensity](#12-the-roofline-model-mathematical-formulation-of-arithmetic-intensity)
 - [2. Module I: Numerical Precision, Arithmetic & Model Quantization](#2-module-i-numerical-precision-arithmetic--model-quantization)
-  - [2.1 Data Types & Binary Encodings](#21-data-types--binary-encodings)
+  - [2.1 Data Types & IEEE-754 Binary Encodings](#21-data-types--ieee-754-binary-encodings)
   - [2.2 Linear Quantization Mechanics: Symmetric vs. Asymmetric](#22-linear-quantization-mechanics-symmetric-vs-asymmetric)
     - [2.2.1 Symmetric Quantization (Absmax)](#221-symmetric-quantization-absmax)
     - [2.2.2 Asymmetric Quantization (Zero-Point)](#222-asymmetric-quantization-zero-point)
-  - [2.3 Outliers, Dynamic Range Clipping & Calibration Strategies](#23-outliers-dynamic-range-clipping--calibration-strategies)
+  - [2.3 Outliers, Dynamic Range Clipping & Loss Optimization](#23-outliers-dynamic-range-clipping--loss-optimization)
+    - [2.3.1 Mean Squared Error (MSE) Optimization](#231-mean-squared-error-mse-optimization)
+    - [2.3.2 Kullback-Leibler (KL) Divergence Calibration](#232-kullback-leibler-kl-divergence-calibration)
   - [2.4 Weight vs. Activation Quantization (Static vs. Dynamic Calibration)](#24-weight-vs-activation-quantization-static-vs-dynamic-calibration)
   - [2.5 Advanced 4-Bit Post-Training Quantization (PTQ)](#25-advanced-4-bit-post-training-quantization-ptq)
-    - [2.5.1 GPTQ (Generalized Post-Training Quantization)](#251-gptq-generalized-post-training-quantization)
-    - [2.5.2 GGUF & K-Quants (Block-Wise Hierarchical Quantization)](#252-gguf--k-quants-block-wise-hierarchical-quantization)
+    - [2.5.1 GPTQ: Second-Order Taylor Expansion & Inverse Hessian Compensation](#251-gptq-second-order-taylor-expansion--inverse-hessian-compensation)
+    - [2.5.2 GGUF & K-Quants: Hierarchical Block-Wise Scaling](#252-gguf--k-quants-hierarchical-block-wise-scaling)
   - [2.6 Quantization-Aware Training (QAT) & Loss Landscapes](#26-quantization-aware-training-qat--loss-landscapes)
+    - [2.6.1 Straight-Through Estimator (STE) Derivation](#261-straight-through-estimator-ste-derivation)
+    - [2.6.2 Loss Landscape Basin Geometry](#262-loss-landscape-basin-geometry)
   - [2.7 Sub-2-Bit and Extreme Low-Bit Paradigms](#27-sub-2-bit-and-extreme-low-bit-paradigms)
     - [2.7.1 BitNet 1-Bit (BitLinear)](#271-bitnet-1-bit-bitlinear)
-    - [2.7.2 BitNet 1.58b (Ternary Quantization)](#272-bitnet-158b-ternary-quantization)
+    - [2.7.2 BitNet 1.58b: Ternary Quantization & Addition-Only Inference](#272-bitnet-158b-ternary-quantization--addition-only-inference)
   - [2.8 Quantization Comparison Matrix](#28-quantization-comparison-matrix)
 - [3. Module II: Sequence Modeling Paradigms — Transformers, RNNs & State Space Models (Mamba)](#3-module-ii-sequence-modeling-paradigms--transformers-rnns--state-space-models-mamba)
   - [3.1 The Sequence Modeling Trilemma](#31-the-sequence-modeling-trilemma)
   - [3.2 Continuous-Time State Space Models (SSMs)](#32-continuous-time-state-space-models-ssms)
-  - [3.3 Discretization via Zero-Order Hold (ZOH)](#33-discretization-via-zero-order-hold-zoh)
+  - [3.3 Exact Discretization via Zero-Order Hold (ZOH)](#33-exact-discretization-via-zero-order-hold-zoh)
   - [3.4 The Dual Representation of Linear Time-Invariant (LTI) SSMs](#34-the-dual-representation-of-linear-time-invariant-lti-ssms)
-    - [3.4.1 Recurrent Representation (Fast Linear Inference)](#341-recurrent-representation-fast-linear-inference)
+    - [3.4.1 Recurrent Representation (Linear Inference Complexity)](#341-recurrent-representation-linear-inference-complexity)
     - [3.4.2 Convolutional Representation (Parallel Training via FFT)](#342-convolutional-representation-parallel-training-via-fft)
   - [3.5 Long-Range Memory & The HiPPO Matrix](#35-long-range-memory--the-hippo-matrix)
   - [3.6 The Fundamental Failure Mode of LTI SSMs: Content Invariance](#36-the-fundamental-failure-mode-of-lti-ssms-content-invariance)
@@ -37,25 +41,25 @@
     - [3.7.1 Mathematical Formulation of Selective Parameterization](#371-mathematical-formulation-of-selective-parameterization)
     - [3.7.2 Physical Intuition of Step-Size Delta](#372-physical-intuition-of-step-size-delta)
   - [3.8 Systems Innovations for Selective SSMs](#38-systems-innovations-for-selective-ssms)
-    - [3.8.1 The Parallel Associative Scan](#381-the-parallel-associative-scan)
+    - [3.8.1 The Parallel Associative Scan (Blelloch Algorithm)](#381-the-parallel-associative-scan-blelloch-algorithm)
     - [3.8.2 Hardware-Aware Memory Hierarchy & Kernel Fusion](#382-hardware-aware-memory-hierarchy--kernel-fusion)
     - [3.8.3 Activation Recomputation in the Backward Pass](#383-activation-recomputation-in-the-backward-pass)
   - [3.9 The Mamba Block Architecture vs. Transformer Decoder](#39-the-mamba-block-architecture-vs-transformer-decoder)
 - [4. Module III: Distributed Training, Memory Layouts & Systems Parallelism](#4-module-iii-distributed-training-memory-layouts--systems-parallelism)
   - [4.1 Anatomy of GPU Memory in Large Language Models](#41-anatomy-of-gpu-memory-in-large-language-models)
     - [4.1.1 The 16 Bytes per Parameter Rule in Mixed-Precision Adam](#411-the-16-bytes-per-parameter-rule-in-mixed-precision-adam)
-    - [4.1.2 The Mathematical Necessity of FP32 Master Weights & Optimizer States](#412-the-mathematical-necessity-of-fp32-master-weights--optimizer-states)
-  - [4.2 Data Parallelism (DDP) & Collective All-Reduce](#42-data-parallelism-ddp--collective-all-reduce)
+    - [4.1.2 Mathematical Proof: Why FP32 Master Weights & Optimizer States Are Required](#412-mathematical-proof-why-fp32-master-weights--optimizer-states-are-required)
+  - [4.2 Data Parallelism (DDP) & Ring All-Reduce Proofs](#42-data-parallelism-ddp--ring-all-reduce-proofs)
   - [4.3 Tensor Parallelism (Megatron-LM Intra-Layer Slicing)](#43-tensor-parallelism-megatron-lm-intra-layer-slicing)
     - [4.3.1 Slicing the Multi-Layer Perceptron (MLP) Block](#431-slicing-the-multi-layer-perceptron-mlp-block)
     - [4.3.2 Slicing Multi-Head Self-Attention (MHSA)](#432-slicing-multi-head-self-attention-mhsa)
   - [4.4 Pipeline Parallelism (PP) & Inter-Layer Scheduling](#44-pipeline-parallelism-pp--inter-layer-scheduling)
-    - [4.4.1 The Pipeline Bubble & Mathematical Formulation](#441-the-pipeline-bubble--mathematical-formulation)
+    - [4.4.1 The Pipeline Bubble: Exact Derivation](#441-the-pipeline-bubble-exact-derivation)
     - [4.4.2 Mathematical Equivalence of Micro-Batch Gradient Accumulation](#442-mathematical-equivalence-of-micro-batch-gradient-accumulation)
     - [4.4.3 GPipe vs. 1F1B Schedule Activation Footprints](#443-gpipe-vs-1f1b-schedule-activation-footprints)
   - [4.5 Context Parallelism (CP) & Ring Attention](#45-context-parallelism-cp--ring-attention)
     - [4.5.1 The Ring Communication Topology](#451-the-ring-communication-topology)
-    - [4.5.2 Online Numerically Stable Softmax Accumulation](#452-online-numerically-stable-softmax-accumulation)
+    - [4.5.2 Online Numerically Stable Softmax Accumulation Proof](#452-online-numerically-stable-softmax-accumulation-proof)
   - [4.6 ZeRO (Zero Redundancy Optimizer) & FSDP Mechanics](#46-zero-zero-redundancy-optimizer--fsdp-mechanics)
     - [4.6.1 ZeRO-Stage 1: Optimizer State Sharding](#461-zero-stage-1-optimizer-state-sharding)
     - [4.6.2 ZeRO-Stage 2: Gradient Sharding](#462-zero-stage-2-gradient-sharding)
@@ -74,8 +78,9 @@
     - [5.4.2 The KV Cache Memory Explosion at Scale](#542-the-kv-cache-memory-explosion-at-scale)
   - [5.5 Batching Economics & The Law of Diminishing Latency](#55-batching-economics--the-law-of-diminishing-latency)
     - [5.5.1 Amortizing Memory Bandwidth Across Batch Dimension B](#551-amortizing-memory-bandwidth-across-batch-dimension-b)
-    - [5.5.2 Throughput vs. Per-User Latency (TPOT) Trade-Off](#552-throughput-vs-per-user-latency-tpot-trade-off)
-    - [5.5.3 Model Bandwidth Utilization (MBU) vs. Model FLOPs Utilization (MFU)](#553-model-bandwidth-utilization-mbu-vs-model-flops-utilization-mfu)
+    - [5.5.2 Inflection Point: The Knee Batch Size Formula](#552-inflection-point-the-knee-batch-size-formula)
+    - [5.5.3 Throughput vs. Per-User Latency (TPOT) Trade-Off](#553-throughput-vs-per-user-latency-tpot-trade-off)
+    - [5.5.4 Model Bandwidth Utilization (MBU) vs. Model FLOPs Utilization (MFU)](#554-model-bandwidth-utilization-mbu-vs-model-flops-utilization-mfu)
   - [5.6 PagedAttention: OS-Inspired Virtual Memory for KV Cache (vLLM)](#56-pagedattention-os-inspired-virtual-memory-for-kv-cache-vllm)
     - [5.6.1 The Memory Fragmentation Crisis](#561-the-memory-fragmentation-crisis)
     - [5.6.2 Block Tables & Virtual Paging Architecture](#562-block-tables--virtual-paging-architecture)
@@ -94,12 +99,13 @@
   - [7.1 Full Model Lifecycle Workflow](#71-full-model-lifecycle-workflow)
   - [7.2 Systems Engineering Decision Flowchart](#72-systems-engineering-decision-flowchart)
   - [7.3 Comprehensive Glossary of Symbols & Notation](#73-comprehensive-glossary-of-symbols--notation)
+  - [7.4 References & Primary Sources](#74-references--primary-sources)
 
 ---
 
 ## 1. Foundational Systems Perspective: The Compute & Memory Wall
 
-Modern machine learning systems are fundamentally constrained by computer architecture. To master deep learning at scale, one must analyze algorithmic complexity not only through asymptotic FLOPs ($O(N)$), but through memory bandwidth, cache hierarchy utilization, and inter-accelerator interconnects.
+Modern deep learning performance is strictly governed by computer hardware architecture. To understand why models execute at specific speeds, we analyze algorithms through both asymptotic computational complexity ($O(N)$) and physical data movement constraints across the GPU memory hierarchy.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -137,24 +143,35 @@ Modern machine learning systems are fundamentally constrained by computer archit
 
 ### 1.1 The Hardware Execution Model: SRAM vs. HBM Hierarchy
 
-1. **Registers & SRAM (L1 Cache):** Ultra-fast, on-chip storage directly adjacent to execution units. Has massive bandwidth ($>15\text{ TB/s}$) but strictly limited capacity ($<256\text{ KB}$ per Streaming Multiprocessor).
-2. **High Bandwidth Memory (HBM / DRAM):** Off-chip bulk memory ($80\text{ GB}-141\text{ GB}$). High capacity, but bandwidth is orders of magnitude slower than SRAM ($2-4.8\text{ TB/s}$).
-3. **Interconnects (NVLink vs. Ethernet/InfiniBand):** Intra-node NVLink provides massive bandwidth ($900\text{ GB/s}$), while inter-node networks (InfiniBand/RoCE) drop down to $25-50\text{ GB/s}$.
+Modern GPU accelerators (e.g., NVIDIA A100, H100, H200, B200) contain two primary storage domains:
 
-### 1.2 The Roofline Model: Arithmetic Intensity & Bottlenecks
+1. **On-Chip Registers & SRAM (L1 Cache):**
+   - Located directly inside each Streaming Multiprocessor (SM).
+   - Massive aggregate bandwidth ($>15\text{ TB/s} - 30\text{ TB/s}$).
+   - Extremely limited storage capacity ($<256\text{ KB}$ per SM, $\approx 30 - 50\text{ MB}$ total across the entire chip).
+2. **Off-Chip High Bandwidth Memory (HBM3 / Main VRAM):**
+   - High storage capacity ($80\text{ GB} - 141\text{ GB}$).
+   - Bandwidth is an order of magnitude slower than SRAM ($2.0 - 4.8\text{ TB/s}$).
+3. **Interconnects (NVLink vs. PCIe & Network Fabrics):**
+   - Intra-node GPU-to-GPU: NVLink provides $900\text{ GB/s}$ bidirectional bandwidth per GPU.
+   - Inter-node cluster network: InfiniBand NDR provides $50\text{ GB/s}$ ($400\text{ Gbps}$) per link.
 
-The performance of an operational kernel is governed by its **Arithmetic Intensity** ($I$), defined as:
+---
+
+### 1.2 The Roofline Model: Mathematical Formulation of Arithmetic Intensity
+
+The attainable execution throughput $P$ (in TFLOPs/second) of any computational kernel is strictly bounded by the **Roofline Equation**:
 
 $$
 I = \frac{\text{Floating Point Operations (FLOPs)}}{\text{Memory Access (Bytes transferred from HBM)}}
 $$
 
 $$
-\text{Attainable Performance } P = \min\left(P_{\text{peak}}, \; I \times \text{Bandwidth}_{\text{HBM}}\right)
+P = \min\left(P_{\text{peak}}, \; I \times \text{Bandwidth}_{\text{HBM}}\right)
 $$
 
 ```text
-Performance (TFLOPs)
+Attainable Performance P (TFLOPs)
    ^
    |                      /---------------- Peak Compute Limit (P_peak)
    |                     /
@@ -162,30 +179,44 @@ Performance (TFLOPs)
    |                   /  Compute-Bound Regime (e.g., Prefill Phase, Large GEMMs)
    |                  /
    |                 /
-   |                / Memory-Bound Regime (e.g., Autoregressive Decoding, Softmax, RMSNorm)
+   |                / Memory-Bound Regime (e.g., Single-token Decoding, Softmax, RMSNorm)
    |               /
    |              /
    |             /
    |------------/-------------------------------------------------------->
-   0           I_knee                               Arithmetic Intensity (FLOPs/Byte)
+   0           I_knee                               Arithmetic Intensity I (FLOPs/Byte)
 ```
 
-- **Memory-Bound Operations ($I < I_{\text{knee}}$):** Normalization layers (RMSNorm, LayerNorm), element-wise activations (GeLU, SiLU), Point-wise additions, Softmax, Autoregressive decoding with batch size $1$. The GPU cores sit idle waiting for memory loads from HBM.
-- **Compute-Bound Operations ($I > I_{\text{knee}}$):** Large Matrix Multiplications ($Y = XW$) in Linear and Attention projection layers during the prompt prefill phase or decoding with large batched requests ($B \gg 1$).
+The threshold between memory-bound and compute-bound regimes is the **Knee Arithmetic Intensity** ($I_{\text{knee}}$):
+
+$$
+I_{\text{knee}} = \frac{P_{\text{peak}}}{\text{Bandwidth}_{\text{HBM}}}
+$$
+
+For an NVIDIA H100 SXM GPU ($P_{\text{peak}} = 989\text{ TFLOPs}$ in BF16 Tensor Core, $\text{Bandwidth}_{\text{HBM}} = 3.35\text{ TB/s}$):
+
+$$
+I_{\text{knee}} = \frac{989 \times 10^{12}\text{ FLOPs/s}}{3.35 \times 10^{12}\text{ Bytes/s}} \approx \mathbf{295.2\text{ FLOPs/Byte}}
+$$
+
+- **Memory-Bound Regime ($I < 295.2\text{ FLOPs/Byte}$):** Any kernel that performs fewer than $295.2$ calculations per byte loaded from memory (e.g., LayerNorm, Softmax, single-token autoregressive decoding) leaves Tensor Cores idle while waiting on memory buses.
+- **Compute-Bound Regime ($I > 295.2\text{ FLOPs/Byte}$):** Kernels with high data reuse (e.g., large GEMMs during prompt prefill) fully saturate Tensor Core compute units.
 
 ---
 
 ## 2. Module I: Numerical Precision, Arithmetic & Model Quantization
 
-Model quantization compresses high-precision tensors (typically 32-bit or 16-bit floating point) into low-bit representations (8-bit, 4-bit, 2-bit, or ternary), drastically reducing memory footprint and memory bandwidth pressure while accelerating compute on specialized tensor hardware.
+Model quantization compresses high-precision tensors (FP32, FP16, BF16) into low-bit integers (INT8, INT4) or discrete ternary states ($\{-1, 0, +1\}$). This reduces memory consumption and memory bandwidth requirements by $2\times - 8\times$.
 
-### 2.1 Data Types & Binary Encodings
+### 2.1 Data Types & IEEE-754 Binary Encodings
 
-Under the IEEE-754 standard and modern deep learning formats, numerical values are partitioned into three bitfields: Sign ($s$), Exponent ($e$), and Mantissa/Fraction ($m$).
+Under the IEEE-754 standard and modern deep learning formats, continuous floating-point numbers are decomposed into three bitfields: Sign ($s$), Exponent ($e$), and Mantissa/Fraction ($m$):
 
 $$
 \text{Value} = (-1)^s \times 2^{e - \text{bias}} \times \left(1 + \sum_{i=1}^{M} m_i 2^{-i}\right)
 $$
+
+Where the exponent bias is defined as $\text{bias} = 2^{E-1} - 1$ for an $E$-bit exponent.
 
 ```text
 FP32 (Single Precision, 32-bit):
@@ -225,22 +256,22 @@ INT8 (Signed Integer, 8-bit):
 └─┴────────────────┘
 ```
 
-| Format | Total Bits | Exponent Bits | Mantissa Bits | Dynamic Range | Relative Precision (Epsilon) | Primary Use Case |
+| Format | Total Bits | Exponent Bits | Mantissa Bits | Dynamic Range | Machine Epsilon ($\epsilon$) | Primary Systems Role |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **FP32** | 32 | 8 | 23 | $\approx 10^{\pm 38}$ | $2^{-23} \approx 1.19 \times 10^{-7}$ | Master weights, optimizer states |
-| **FP16** | 16 | 5 | 10 | $\approx [-6.5 \times 10^4, 6.5 \times 10^4]$ | $2^{-10} \approx 9.77 \times 10^{-4}$ | Legacy mixed-precision forward/backward |
+| **FP32** | 32 | 8 | 23 | $\approx 10^{\pm 38}$ | $2^{-23} \approx 1.19 \times 10^{-7}$ | Master weights, optimizer accumulators |
+| **FP16** | 16 | 5 | 10 | $\approx [-6.5 \times 10^4, 6.5 \times 10^4]$ | $2^{-10} \approx 9.77 \times 10^{-4}$ | Legacy mixed-precision training |
 | **BF16** | 16 | 8 | 7 | $\approx 10^{\pm 38}$ | $2^{-7} \approx 7.81 \times 10^{-3}$ | Modern LLM standard training |
-| **FP8 (E4M3)** | 8 | 4 | 3 | $\approx [-448, 448]$ | $2^{-3} = 0.125$ | Forward pass weights/activations |
-| **FP8 (E5M2)** | 8 | 5 | 2 | $\approx [-5.7 \times 10^4, 5.7 \times 10^4]$ | $2^{-2} = 0.25$ | Backward pass gradients |
-| **INT8** | 8 | 0 | 7 | $[-128, 127]$ | Constant step size $\Delta = 1$ | Fast integer inference, activations |
-| **INT4** | 4 | 0 | 3 | $[-8, 7]$ | Constant step size $\Delta = 1$ | PTQ weight storage (GPTQ, AWQ) |
-| **Ternary** | 1.58 | 0 | 0 | $\{-1, 0, +1\}$ | Discrete ternary state | BitNet 1.58b addition-only inference |
+| **FP8 (E4M3)** | 8 | 4 | 3 | $\approx [-448, 448]$ | $2^{-3} = 0.125$ | Forward pass activations & weights |
+| **FP8 (E5M2)** | 8 | 5 | 2 | $\approx [-5.7 \times 10^4, 5.7 \times 10^4]$ | $2^{-2} = 0.25$ | Backward pass gradient propagation |
+| **INT8** | 8 | 0 | 7 | $[-128, 127]$ | Constant step $\Delta = 1$ | High-throughput integer inference |
+| **INT4** | 4 | 0 | 3 | $[-8, 7]$ | Constant step $\Delta = 1$ | Weight-only PTQ (GPTQ, AWQ) |
+| **Ternary** | 1.58 | 0 | 0 | $\{-1, 0, +1\}$ | Discrete alphabet | BitNet addition-only inference |
 
 ---
 
 ### 2.2 Linear Quantization Mechanics: Symmetric vs. Asymmetric
 
-Linear quantization maps a continuous, real-valued interval $[\alpha, \beta] \subset \mathbb{R}$ to a discrete grid of integer values $[q_{\min}, q_{\max}] \subset \mathbb{Z}$.
+Linear quantization maps a continuous floating-point interval $[\alpha, \beta] \subset \mathbb{R}$ to a discrete grid of integers $[q_{\min}, q_{\max}] \subset \mathbb{Z}$.
 
 ```text
 Continuous FP32 Space:
@@ -254,54 +285,54 @@ Quantized INT8 Grid:
 
 #### 2.2.1 Symmetric Quantization (Absmax)
 
-Symmetric quantization forces the floating-point zero to map exactly to the integer zero ($z = 0$). The dynamic range is symmetric around zero: $[-\alpha, \alpha]$ where $\alpha = \max(|x|)$.
+In **symmetric quantization**, the floating-point origin $0.0$ maps directly to the integer $0$ ($z = 0$). The dynamic range is symmetric around zero: $[-\alpha, \alpha]$ where $\alpha = \max(|x|)$.
 
-1. **Scale Factor Calculation:**
+1. **Scale Factor ($s$):**
    $$
-   s = \frac{2^{b-1} - 1}{\max(|x|)} = \frac{q_{\max}}{\alpha}
-   $$
-
-2. **Quantization Formula (Floating Point $\to$ Integer):**
-   $$
-   x_q = \text{clamp}\left(\lfloor \text{round}(s \cdot x) \rceil, \; -q_{\max}, \; q_{\max}\right)
+   s = \frac{q_{\max}}{\alpha} = \frac{2^{b-1} - 1}{\max(|x|)}
    $$
 
-3. **Dequantization Formula (Integer $\to$ Floating Point):**
+2. **Quantization Mapping ($x \to x_q$):**
+   $$
+   x_q = \text{clamp}\left(\text{round}(s \cdot x), -q_{\max}, q_{\max}\right)
+   $$
+
+3. **Dequantization Reconstruction ($x_q \to \hat{x}$):**
    $$
    \hat{x} = \frac{x_q}{s}
    $$
 
-4. **Quantization Error:**
+4. **Maximum Quantization Error:**
    $$
-   \epsilon = |x - \hat{x}| \le \frac{1}{2s}
+   \epsilon_{\max} = |x - \hat{x}| \le \frac{1}{2s}
    $$
 
 #### 2.2.2 Asymmetric Quantization (Zero-Point)
 
-When data distributions are strictly skewed (e.g., post-ReLU or post-GeLU activations where $x \ge 0$), symmetric quantization wastes half the integer representation domain. Asymmetric quantization maps $[\min(x), \max(x)] \to [q_{\min}, q_{\max}]$ by introducing an integer **Zero-Point** $z$.
+When data distributions are skewed (e.g., post-ReLU or post-GeLU activations where $x \ge 0$), symmetric quantization wastes half the integer representation domain. **Asymmetric quantization** introduces an integer **Zero-Point** ($z$):
 
-1. **Scale Factor Calculation:**
+1. **Scale Factor ($s$):**
    $$
    s = \frac{q_{\max} - q_{\min}}{\max(x) - \min(x)} = \frac{2^b - 1}{\alpha - \beta}
    $$
 
-2. **Zero-Point Calculation:**
+2. **Zero-Point Calculation ($z$):**
    $$
-   z = \text{round}\left(- \beta \cdot s\right) + q_{\min} = \text{clamp}\left(\left\lfloor \text{round}\left(- \min(x) \cdot s + q_{\min}\right) \right\rceil, \; q_{\min}, \; q_{\max}\right)
+   z = \text{clamp}\left(\text{round}(-\min(x) \cdot s) + q_{\min}, q_{\min}, q_{\max}\right)
    $$
 
 3. **Quantization Mapping:**
    $$
-   x_q = \text{clamp}\left(\lfloor \text{round}(s \cdot x) \rceil + z, \; q_{\min}, \; q_{\max}\right)
+   x_q = \text{clamp}\left(\text{round}(s \cdot x) + z, q_{\min}, q_{\max}\right)
    $$
 
-4. **Dequantization Mapping:**
+4. **Dequantization Reconstruction:**
    $$
    \hat{x} = \frac{x_q - z}{s}
    $$
 
 ```text
-Symmetric vs. Asymmetric Numerical Walkthrough (FP32 -> INT8):
+Step-by-Step Numerical Example (FP32 -> INT8):
 Input Array: x = [-6.0, -2.0, 0.0, 1.5, 4.0]
 
 [Symmetric Absmax]:
@@ -311,51 +342,34 @@ Input Array: x = [-6.0, -2.0, 0.0, 1.5, 4.0]
   x_hat = x_q / s = [-6.000, -1.984, 0.000, 1.512, 4.016]
 
 [Asymmetric Zero-Point]:
-  beta = -6.0, alpha = 4.0, range = 10.0
-  s = (127 - (-128)) / (4.0 - (-6.0)) = 255 / 10.0 = 25.5
-  z = round(-(-6.0) * 25.5) + (-128) = round(153) - 128 = 25
+  min = -6.0, max = 4.0, range = 10.0
+  s = 255 / 10.0 = 25.5
+  z = round(-(-6.0) * 25.5) - 128 = 153 - 128 = 25
   x_q = round(x * s) + z = [-153+25, -51+25, 0+25, 38+25, 102+25] = [-128, -26, 25, 63, 127]
   x_hat = (x_q - z) / s = [-6.000, -2.000, 0.000, 1.490, 4.000]
 ```
 
 ---
 
-### 2.3 Outliers, Dynamic Range Clipping & Calibration Strategies
+### 2.3 Outliers, Dynamic Range Clipping & Loss Optimization
 
-In LLMs (notably at scales $>6.7\text{B}$ parameters), activation distributions exhibit emergent **systematic channel outliers**—isolated features with magnitudes $20-100\times$ larger than normal activations. If the scale factor $s$ is computed strictly from the maximum value $\alpha = \max(|x|)$, the non-outlier values will be squeezed into a tiny band of integer buckets, destroying representation capacity.
+In transformer models at scale ($>6.7\text{B}$ parameters), activation distributions exhibit **emergent systematic channel outliers** with magnitudes $20-100\times$ larger than normal values. If the scale factor $s$ is computed strictly from $\alpha = \max(|x|)$, all normal values collapse into a few integer bins.
 
-```text
-Without Clipping (Full Range Mapping):
-  Outlier Value: 120.0, Normal Values: [-2.0, 1.0, 0.5, -0.8]
-  Scale s = 127 / 120 = 1.058
-  Quantized Normal Values: [-2, 1, 1, -1]  <-- Extreme precision loss / collapse!
+#### 2.3.1 Mean Squared Error (MSE) Optimization
 
-With Calibration / Clipping at Dynamic Range [-5.0, 5.0]:
-  Outlier Value 120.0 clipped to +5.0 -> Quantized to +127 (High Outlier Error)
-  Scale s = 127 / 5.0 = 25.4
-  Quantized Normal Values: [-51, 25, 13, -20] <-- High granularity preserved!
-```
+MSE calibration finds the optimal clipping threshold $\alpha^*$ that minimizes the reconstruction error:
 
-```text
-                        CALIBRATION STRATEGIES
-                                   │
-         ┌─────────────────────────┼─────────────────────────┐
-         ▼                         ▼                         ▼
-  Percentile Clipping        Mean Squared Error        Entropy Minimization
-  (e.g., 99.99th percentile) (MSE Optimization)        (KL-Divergence / TensorRT)
-  - Drops top 0.01%         - Minimizes ||W - W_hat|| - Minimizes information loss
-  - Simple, fast            - Optimal for weights     - Optimal for activations
-```
+$$
+\alpha^* = \arg\min_{\alpha} \frac{1}{N} \sum_{i=1}^{N} \left( x_i - \frac{\text{clamp}\left(\text{round}\left(\frac{q_{\max}}{\alpha} x_i\right), -q_{\max}, q_{\max}\right)}{\frac{q_{\max}}{\alpha}} \right)^2
+$$
 
-1. **Mean Squared Error (MSE) Optimization:**
-   $$
-   \alpha^* = \arg\min_{\alpha} \sum_{i} \left( x_i - \text{Dequant}(\text{Quant}(x_i; \alpha)) \right)^2
-   $$
-2. **Kullback-Leibler (KL) Divergence Calibration:**
-   Measures the relative entropy between the continuous probability distribution $P$ of the original tensor and the discretized distribution $Q$ constructed by expanding the quantized histogram back to the original bucket count:
-   $$
-   D_{\text{KL}}(P \parallel Q) = \sum_{k=1}^{N} P(k) \log\left(\frac{P(k)}{Q(k)}\right)
-   $$
+#### 2.3.2 Kullback-Leibler (KL) Divergence Calibration
+
+KL divergence treats the original continuous tensor histogram $P$ and the reconstructed quantized histogram $Q$ as probability distributions, minimizing information loss:
+
+$$
+D_{\text{KL}}(P \parallel Q) = \sum_{k=1}^{N} P(k) \log\left(\frac{P(k)}{Q(k)}\right)
+$$
 
 ---
 
@@ -366,15 +380,15 @@ With Calibration / Clipping at Dynamic Range [-5.0, 5.0]:
 │                     DYNAMIC VS. STATIC ACTIVATION QUANTIZATION              │
 │                                                                             │
 │  [Dynamic Quantization]                                                     │
-│   Input X ──► [Compute s, z on-the-fly] ──► [Quantize X_q] ──► [MatMul]     │
+│   Input X ──► [Compute scale on-the-fly] ──► [Quantize X] ──► [MatMul]      │
 │   - Scale computed at runtime per token/layer.                              │
-│   - Higher accuracy, but adds kernel launch & reduction overhead.           │
+│   - Higher accuracy, but adds minor reduction overhead.                     │
 │                                                                             │
 │  [Static Quantization]                                                      │
-│   Calibration Data ──► [Offline Profiling] ──► [Precomputed s, z in Graph]  │
-│   Input X ──► [Quantize with Precomputed s, z] ──► [MatMul]                │
+│   Calibration Data ──► [Offline Profiling] ──► [Precomputed scale in Graph] │
+│   Input X ──► [Quantize with Precomputed scale] ──► [MatMul]                │
 │   - Scale is frozen; zero runtime calibration latency.                      │
-│   - Lower compute overhead, but sensitive to out-of-distribution inputs.     │
+│   - Sensitive to out-of-distribution input shifts.                          │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -382,57 +396,37 @@ With Calibration / Clipping at Dynamic Range [-5.0, 5.0]:
 
 ### 2.5 Advanced 4-Bit Post-Training Quantization (PTQ)
 
-Going below 8 bits (e.g., INT4) using naive linear rounding causes catastrophic perplexity degradation. Modern 4-bit PTQ algorithms solve this through second-order optimization and hierarchical block-wise scaling.
+#### 2.5.1 GPTQ: Second-Order Taylor Expansion & Inverse Hessian Compensation
 
-#### 2.5.1 GPTQ (Generalized Post-Training Quantization)
-
-GPTQ quantizes weight matrices column-by-column while continuously compensating unquantized weights for the introduced quantization error, utilizing a second-order Taylor expansion of the layer output error.
+GPTQ quantizes weight matrices column-by-column while continuously compensating unquantized weights for the introduced quantization error.
 
 1. **Objective Function:**
    $$
    \arg\min_{\widehat{W}} \| W X - \widehat{W} X \|_2^2
    $$
 
-2. **Inverse Hessian Formulation:**
-   The Hessian of the squared error with respect to the weights is $H = 2 X X^T$. Let $H^{-1}$ denote its inverse. GPTQ precomputes $H^{-1}$ via Cholesky decomposition:
+2. **Second-Order Taylor Series Expansion:**
+   Let $\Delta W = \widehat{W} - W$. The change in squared output error is:
    $$
-   H^{-1} = L \cdot L^T
+   \Delta \mathcal{L} \approx \nabla_W \mathcal{L}^T \Delta W + \frac{1}{2} \Delta W^T H \Delta W
+   $$
+   At the local minimum of pre-trained weights, $\nabla_W \mathcal{L} \approx 0$. The Hessian matrix with respect to weights is:
+   $$
+   H = 2 X X^T
    $$
 
-3. **Step-by-Step Weight Update & Error Redistribution:**
-   When the $q$-th column of the weight matrix $W_{:, q}$ is quantized to $\widehat{W}_{:, q} = \text{Quant}(W_{:, q})$, the error vector is:
-   $$
-   E_q = W_{:, q} - \widehat{W}_{:, q}
-   $$
-   This error is compensated across all remaining unquantized columns $j > q$ using:
+3. **Optimal Weight Compensation via Inverse Hessian:**
+   When column $q$ is quantized ($W_{:, q} \to \widehat{W}_{:, q}$), the quantization error is $E_q = W_{:, q} - \widehat{W}_{:, q}$. To minimize $\Delta \mathcal{L}$, all remaining unquantized columns $j > q$ are updated by:
    $$
    W_{:, j} \leftarrow W_{:, j} - \frac{E_q \cdot [H^{-1}]_{q, j}}{[H^{-1}]_{q, q}}
    $$
 
-```text
-GPTQ Execution Trace Across Weight Matrix Columns:
-Weight Matrix W: [w_1 | w_2 | w_3 | ... | w_N]
-Hessian Inverse: H^-1 = (2 X X^T + lambda*I)^-1
+4. **Cholesky Decomposition ($H^{-1} = L L^T$):**
+   GPTQ adds a diagonal damping term $\lambda I$ ($\lambda \approx 1\%\text{ of average diagonal}$) to ensure numerical stability and computes the Cholesky factor $L$ once, eliminating matrix inversion during runtime.
 
-Step 1: Quantize column 1 -> w_hat_1 = Quant(w_1)
-        Quantization Error: e_1 = w_1 - w_hat_1
-Step 2: Update all remaining columns:
-        w_2 <- w_2 - e_1 * (H^-1)_{1,2} / (H^-1)_{1,1}
-        w_3 <- w_3 - e_1 * (H^-1)_{1,3} / (H^-1)_{1,1}
-Step 3: Quantize updated column 2 -> w_hat_2 = Quant(w_2)
-        Redistribute e_2 to columns 3...N via H^-1
-... Repeat until all N columns are quantized.
-```
+#### 2.5.2 GGUF & K-Quants: Hierarchical Block-Wise Scaling
 
-> [!NOTE]
-> **GPTQ Engineering Optimizations:**
-> 1. **Damping Factor:** Adds $\lambda \cdot I$ ($\lambda \approx 1\%\text{ of avg diagonal}$) to ensure $H$ is positive-definite and numerically invertible.
-> 2. **Lazy Batching:** Quantizes blocks of columns ($128$ columns at a time) using local updates, followed by a single fused GEMM to update the remaining matrix.
-> 3. **Cholesky Precomputation:** Avoids recomputing $H^{-1}$ dynamically at each step.
-
-#### 2.5.2 GGUF & K-Quants (Block-Wise Hierarchical Quantization)
-
-GGUF (used heavily in `llama.cpp`) utilizes **Hierarchical Block Quantization (K-quants)**. Weights are grouped into **super-blocks** (e.g., 256 weights), which are subdivided into **sub-blocks** (e.g., 16 or 32 weights).
+GGUF divides weight tensors into hierarchical **super-blocks** (256 weights) and **sub-blocks** (16 or 32 weights):
 
 ```text
 Super-Block (256 weights)
@@ -446,43 +440,30 @@ Super-Block (256 weights)
 └───────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Dual-Level Compression:** Sub-block scales $s_i$ are themselves quantized using the super-block scale $S$.
-- **Unified CPU/GPU Hybrid Offloading:** Allows splitting layers between CPU RAM and GPU VRAM with customized memory-mapped I/O (`mmap`).
+- Sub-block scales $s_i$ are quantized relative to the super-scale $S$, providing low quantization error while compressing metadata overhead.
 
 ---
 
 ### 2.6 Quantization-Aware Training (QAT) & Loss Landscapes
 
-Post-Training Quantization fits rounding to a model trained in continuous space. In contrast, Quantization-Aware Training (QAT) models the discretization error directly during gradient descent.
+#### 2.6.1 Straight-Through Estimator (STE) Derivation
+
+The derivative of the rounding operation $\text{round}(x)$ is zero almost everywhere and undefined at integers:
+
+$$
+\frac{d}{dx} \text{round}(x) = 0 \quad \forall x \notin \mathbb{Z} + 0.5
+$$
+
+To permit gradient descent, the **Straight-Through Estimator (STE)** replaces the true rounding gradient with the identity operator during the backward pass:
+
+$$
+\text{Forward: } x_q = \text{round}(x), \qquad \text{Backward: } \frac{\partial \mathcal{L}}{\partial x} \approx \frac{\partial \mathcal{L}}{\partial x_q} \cdot \mathbf{1}_{|x| \le \text{clip}}
+$$
+
+#### 2.6.2 Loss Landscape Basin Geometry
 
 ```text
-                  QAT FORWARD & BACKWARD PASS
-                  
-Forward Pass:
-  FP32 Master Weight W ──► [ Fake Quantization ] ──► W_quant (INT4/INT8)
-                                    │
-                                    ▼
-                         MatMul with Activations
-                                    │
-                                    ▼
-                               Compute Loss L
-                                    │
-Backward Pass (STE):                ▼
-  FP32 Master Weight W ◄── [ dL/dW = dL/dW_quant ] ◄── Backpropagation
-```
-
-1. **Straight-Through Estimator (STE):**
-   The derivative of the rounding function $\lfloor x \rceil$ is zero almost everywhere and undefined at integers. STE substitutes the rounding derivative with the identity function during backpropagation:
-   $$
-   \text{Forward: } x_q = \text{round}(x), \qquad \text{Backward: } \frac{\partial L}{\partial x} \approx \frac{\partial L}{\partial x_q} \cdot \mathbf{1}_{|x| \le \text{clip}}
-   $$
-
-2. **Loss Landscape Minima Geometry:**
-   - **PTQ:** Frequently converges to sharp, narrow local minima in FP32 space. When rounded, the parameters jump outside the basin, creating massive loss spikes.
-   - **QAT:** Forces optimizer trajectories toward wide, flat minima. Even when perturbed by discrete rounding, the loss remains near-optimal.
-
-```text
-Loss
+Loss L
  ^              Narrow Minimum (PTQ Trajectory)      Wide Minimum (QAT Trajectory)
  |
  |                     /\                                  \                /
@@ -497,78 +478,70 @@ Loss
                                                                 Weight Parameter w
 ```
 
+- **PTQ:** Frequently converges to sharp local basins in FP32 space. Discrete rounding displaces the parameters outside the basin, triggering loss spikes.
+- **QAT:** Guides parameter trajectories into broad, flat minima where discrete perturbation preserves near-optimal task performance.
+
 ---
 
 ### 2.7 Sub-2-Bit and Extreme Low-Bit Paradigms
 
 #### 2.7.1 BitNet 1-Bit (BitLinear)
 
-BitNet replaces standard `nn.Linear` layers with `BitLinear`, constraining weights to 1-bit binary values $\{-1, +1\}$ while maintaining INT8 activations.
+BitNet replaces standard `nn.Linear` layers with `BitLinear`, mapping weights to 1-bit binary values $\{-1, +1\}$ and activations to INT8:
 
-```text
-BitNet 1-Bit Weight Quantization Pipeline:
-Input Weights W ──► [ Center around Mean: W - E[W] ] ──► [ Signum Function: sgn(W) ] ──► W_bin in {-1, +1}
-                                                                   │
-                                      Track Beta = 1/N * sum(|W|)  │
-                                                                   ▼
-Act X (FP16) ──► [ Absmax Quant to INT8 ] ──► X_quant ──► [ MatMul: X_quant * W_bin ] ──► Dequant with (alpha * beta)
-```
+$$
+W_{\text{bin}} = \text{Sign}(W - \bar{W}), \qquad \text{where } \text{Sign}(x) = \begin{cases} +1, & x \ge 0 \\ -1, & x < 0 \end{cases}
+$$
 
-1. **Weight Binarization (Signum):**
-   $$
-   W_{\text{bin}} = \text{Sign}(W - \bar{W}), \qquad \text{where } \text{Sign}(x) = \begin{cases} +1, & x \ge 0 \\ -1, & x < 0 \end{cases}
-   $$
-   $$
-   \beta = \frac{1}{nm} \|W\|_1 = \frac{1}{nm}\sum_{i,j} |W_{i,j}|
-   $$
-2. **Activation Quantization (Absmax):**
-   $$
-   X_{\text{quant}} = \text{clamp}\left(\lfloor \text{round}\left( \frac{127}{\alpha} X \right) \rceil, \; -128, \; 127\right), \qquad \alpha = \|X\|_{\infty} = \max(|X|)
-   $$
-3. **Dequantization of Matrix Multiplication:**
-   $$
-   Y = \left( X_{\text{quant}} \times W_{\text{bin}} \right) \times \frac{\alpha \cdot \beta}{127}
-   $$
+$$
+\beta = \frac{1}{nm} \|W\|_1 = \frac{1}{nm}\sum_{i=1}^n \sum_{j=1}^m |W_{i,j}|
+$$
 
-#### 2.7.2 BitNet 1.58b (Ternary Quantization)
+$$
+X_{\text{quant}} = \text{clamp}\left(\text{round}\left( \frac{127}{\alpha} X \right), -128, 127\right), \qquad \alpha = \|X\|_{\infty}
+$$
 
-BitNet 1.58b introduces zero ($0$) into the weight representation, yielding a ternary alphabet $\{-1, 0, +1\}$. Because $\log_2(3) \approx 1.585\text{ bits}$, this architecture represents every parameter in just 1.58 bits.
+$$
+Y = \left( X_{\text{quant}} \times W_{\text{bin}} \right) \times \frac{\alpha \cdot \beta}{127}
+$$
 
-```text
-Matrix Multiplication Transformation:
-Standard MatMul:  y_i = sum_j ( W_ij * x_j )    --> Requires Floating Point Multiply + Accumulate (MAC)
-BitNet 1.58b:     W_ij in {-1, 0, +1}
-                  If W_ij = +1:  Add x_j
-                  If W_ij = -1:  Subtract x_j
-                  If W_ij =  0:  Ignore x_j (Skip)
-                  --> ZERO Floating Point Multiplications! Addition/Subtraction ONLY.
-```
+#### 2.7.2 BitNet 1.58b: Ternary Quantization & Addition-Only Inference
+
+BitNet 1.58b introduces zero ($0$) into the weight representation, creating a ternary alphabet $\{-1, 0, +1\}$:
+
+$$
+\text{Information Capacity per Parameter} = \log_2(3) \approx \mathbf{1.585\text{ bits}}
+$$
 
 1. **Weight Quantization (`absmean`):**
    $$
-   W_{\text{ternary}} = \text{clamp}\left( \left\lfloor \text{round}\left( \frac{W}{\gamma + \epsilon} \right) \right\rceil, \; -1, \; +1 \right), \qquad \gamma = \frac{1}{nm} \sum_{i,j} |W_{i,j}|
+   W_{\text{ternary}} = \text{clamp}\left( \text{round}\left( \frac{W}{\gamma + \epsilon} \right), -1, +1 \right), \qquad \gamma = \frac{1}{nm} \sum_{i,j} |W_{i,j}|
    $$
+
 2. **Activation Quantization:**
    $$
-   X_{\text{quant}} = \text{clamp}\left( \left\lfloor \text{round}\left( \frac{X \cdot 127}{\|X\|_{\infty}} \right) \right\rceil, \; -128, \; 127 \right)
+   X_{\text{quant}} = \text{clamp}\left( \text{round}\left( \frac{X \cdot 127}{\|X\|_{\infty}} \right), -128, 127 \right)
    $$
-3. **Structural Advantages of the Zero State:**
-   - **Feature Filtering / Sparsity:** Setting a weight to $0$ explicitly mutes irrelevant context.
-   - **Energy Efficiency:** Eliminates hardware multipliers entirely, reducing dynamic matrix multiplication energy by up to $10-20\times$ on silicon.
+
+3. **Silicon Execution Elimination:**
+   $$
+   y_i = \sum_{j=1}^{d} W_{i,j} x_j = \sum_{j: W_{i,j}=+1} x_j - \sum_{j: W_{i,j}=-1} x_j
+   $$
+   This eliminates floating-point multiplication units (MACs) entirely from the silicon datapath, replacing them with integer addition and subtraction.
 
 ---
 
 ### 2.8 Quantization Comparison Matrix
 
-| Method | Weight Bits | Activation Bits | Multiplier Operations | Accuracy Retention ($>7\text{B}$) | Primary Bottleneck | Key Application |
+| Method | Weight Bits | Activation Bits | Multiply-Accumulate Operations | Accuracy Retention ($>7\text{B}$) | Primary Bottleneck | Key Systems Role |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **FP16 / BF16** | 16 | 16 | FP16 Tensor MAC | 100% (Baseline) | Memory capacity & memory bandwidth | Pre-training, high-precision serving |
-| **FP8 (E4M3)** | 8 | 8 | FP8 Tensor MAC | $>99.5\%$ | Dynamic range calibration | High-throughput H100 pre-training/serving |
-| **INT8 (PTQ)** | 8 | 8 | INT8 Tensor MAC | $>99.0\%$ | Activation outlier preservation | Enterprise server inference |
-| **GPTQ (PTQ)** | 4 | 16 | FP16/INT4 Dequant GEMM | $>98.0\%$ | Calibration dataset alignment | GPU-only memory constrained serving |
-| **GGUF (K-Quants)** | 2-6 | 16 | Dequantized GEMV/GEMM | $>95.0-99\%$ | CPU compute bandwidth | Consumer hardware, CPU/GPU hybrid offload |
-| **BitNet 1.0** | 1 | 8 | INT8 Add/Sub | Medium ($<30\text{B}$ degradation) | High-entropy capacity limits | Ultra-low power edge devices |
-| **BitNet 1.58b** | 1.58 | 8 | INT8 Addition Only | Parity with FP16 at scale | Specialized ternary ASIC availability | Next-gen energy-efficient LLM inference |
+| **FP16 / BF16** | 16 | 16 | FP16/BF16 Tensor Core | 100% (Baseline) | Memory capacity & bandwidth | Pre-training, full precision |
+| **FP8 (E4M3)** | 8 | 8 | FP8 Tensor Core | $>99.5\%$ | Dynamic range calibration | High-throughput H100 pre-training |
+| **INT8 (PTQ)** | 8 | 8 | INT8 Tensor Core | $>99.0\%$ | Activation outlier handling | Enterprise server inference |
+| **GPTQ (PTQ)** | 4 | 16 | INT4 Dequant + FP16 GEMM | $>98.0\%$ | Calibration distribution shift | GPU VRAM-constrained serving |
+| **GGUF (K-Quants)** | 2-6 | 16 | Block-Dequantized GEMV | $>95.0-99\%$ | CPU memory bandwidth | Consumer hardware, CPU/GPU offload |
+| **BitNet 1.0** | 1 | 8 | INT8 Add/Subtract | Medium | High-entropy representational limits | Ultra-low power edge devices |
+| **BitNet 1.58b** | 1.58 | 8 | INT8 Addition Only | Parity with FP16 at scale | Specialized ternary ASIC hardware | Next-gen energy-efficient inference |
 
 ---
 
@@ -576,10 +549,11 @@ BitNet 1.58b:     W_ij in {-1, 0, +1}
 
 ### 3.1 The Sequence Modeling Trilemma
 
-Sequence models in machine learning must balance three competing properties:
-1. **$O(1)$ Step-Wise Inference Cost:** Generating token $t+1$ requires constant compute and memory, independent of context length $L$.
-2. **Parallelizable Training:** Processing training sequences of length $L$ scales concurrently as $O(1)$ or $O(L \log L)$ depth on GPUs.
-3. **Uncompressed Contextual Recall:** The architecture can model complex interactions across long contexts without catastrophic forgetting.
+Sequence models navigate fundamental tradeoffs between three competing objectives:
+
+1. **Constant Step-Wise Inference ($O(1)$ Complexity):** Generating token $t+1$ requires constant compute and memory, invariant to context length $L$.
+2. **Parallelizable Training:** Processing training sequences of length $L$ scales concurrently as $O(1)$ depth across GPU cores.
+3. **Uncompressed Contextual Recall:** The architecture models long-range dependencies without information loss.
 
 ```text
                       THE SEQUENCE MODELING TRILEMMA
@@ -596,18 +570,18 @@ Sequence models in machine learning must balance three competing properties:
                        O(1) Step-Wise Inference
 ```
 
-| Architecture | Training Parallelism | Inference Step Complexity ($L$-th Token) | Context Footprint During Generation | Long-Context Modeling Fidelity |
+| Architecture | Training Parallelism | Step-Wise Inference Compute | KV Cache Context Memory Footprint | Long-Context Modeling Fidelity |
 | :--- | :--- | :--- | :--- | :--- |
-| **Standard Transformer** | $O(1)$ Depth (Parallel via Attention) | $O(L)$ Compute, $O(L)$ Memory Reads | $O(L)$ KV Cache (Grows linearly) | Exceptional (Attention over raw history) |
-| **Classic RNN / LSTM** | $O(L)$ Sequential (Cannot parallelize) | $O(1)$ Compute, $O(1)$ Memory Reads | $O(1)$ Hidden Vector $h_t$ | Poor (Information bottleneck / forgetting) |
-| **LTI SSMs (S4 / LSSL)** | $O(L \log L)$ (Parallel via FFT Conv) | $O(1)$ Compute, $O(1)$ Memory Reads | $O(1)$ Hidden Vector $h_t$ | Moderate (Fails dynamic selection) |
-| **Selective SSM (Mamba)** | $O(L)$ (Parallel via Associative Scan) | $O(1)$ Compute, $O(1)$ Memory Reads | $O(1)$ Hidden Vector $h_t$ | Exceptional (Matches Transformers at scale) |
+| **Standard Transformer** | $O(1)$ Depth (Parallel Attention) | $O(L)$ Compute per step | $O(L)$ KV Cache (Grows linearly) | Exceptional (Raw history access) |
+| **Classic RNN / LSTM** | $O(L)$ Sequential (No parallelization) | $O(1)$ Compute per step | $O(1)$ Hidden vector $h_t$ | Poor (Contextual forgetting) |
+| **LTI SSMs (S4 / LSSL)** | $O(L \log L)$ (Parallel FFT Conv) | $O(1)$ Compute per step | $O(1)$ Hidden vector $h_t$ | Moderate (Fails content filtering) |
+| **Selective SSM (Mamba)** | $O(L)$ (Parallel Associative Scan) | $O(1)$ Compute per step | $O(1)$ Hidden vector $h_t$ | Exceptional (Matches Transformers) |
 
 ---
 
 ### 3.2 Continuous-Time State Space Models (SSMs)
 
-Originating in classical control theory, continuous-time state space models map a 1-dimensional continuous input signal $x(t) \in \mathbb{R}$ to an output signal $y(t) \in \mathbb{R}$ through an $N$-dimensional latent state variable $h(t) \in \mathbb{R}^N$.
+Continuous SSMs map a 1D continuous input signal $x(t) \in \mathbb{R}$ to an output signal $y(t) \in \mathbb{R}$ through an $N$-dimensional latent state variable $h(t) \in \mathbb{R}^N$:
 
 $$
 \frac{d h(t)}{dt} = \dot{h}(t) = \mathbf{A} h(t) + \mathbf{B} x(t)
@@ -632,119 +606,93 @@ Continuous SSM Block Diagram:
                    └─────────────────[ A ]────────────┘
 ```
 
-- **Transition Matrix $\mathbf{A} \in \mathbb{R}^{N \times N}$:** Controls how the internal hidden state evolves over time in the absence of external inputs.
-- **Input Matrix $\mathbf{B} \in \mathbb{R}^{N \times 1}$:** Maps the continuous scalar input $x(t)$ into the $N$-dimensional state dynamics.
-- **Output Matrix $\mathbf{C} \in \mathbb{R}^{1 \times N}$:** Projects the latent state $h(t)$ back to the observable output space.
-- **Feedthrough Matrix $\mathbf{D} \in \mathbb{R}^{1 \times 1}$:** Direct skip connection from input to output (often omitted, setting $\mathbf{D} = 0$).
+The analytical solution to this continuous system for an initial condition $h(0)$ is:
+
+$$
+h(t) = \exp(\mathbf{A} t) h(0) + \int_{0}^{t} \exp(\mathbf{A}(t - \tau)) \mathbf{B} x(\tau) d\tau
+$$
 
 ---
 
-### 3.3 Discretization via Zero-Order Hold (ZOH)
+### 3.3 Exact Discretization via Zero-Order Hold (ZOH)
 
-Digital computers process discrete tokens $[x_0, x_1, \dots, x_L]$ rather than continuous signals $x(t)$. To apply SSMs to discrete sequences, continuous differential equations are converted into discrete recurrence relations using a sample step size parameter $\Delta \in \mathbb{R}^+$.
-
-Under the **Zero-Order Hold (ZOH)** assumption, the input $x(t)$ is assumed to be constant over the sample interval $[k\Delta, (k+1)\Delta)$:
+Digital systems operate on discrete token sequences $[x_0, x_1, \dots, x_L]$. Under the **Zero-Order Hold (ZOH)** assumption, the continuous input $x(t)$ remains constant across the sample interval $[k\Delta, (k+1)\Delta)$:
 
 $$
 x(t) = x_k \quad \forall t \in [k\Delta, (k+1)\Delta)
 $$
 
-Integrating the continuous state equation over the interval $\Delta$ yields:
+Integrating the state differential equation over the discrete interval $\Delta$:
 
 $$
 h_k = h(k\Delta) = \exp(\Delta \mathbf{A}) h_{k-1} + \left( \int_{0}^{\Delta} \exp(\tau \mathbf{A}) d\tau \cdot \mathbf{B} \right) x_k
 $$
 
-Defining the discretized matrices $\mathbf{\bar{A}}$ and $\mathbf{\bar{B}}$:
+Let $\mathbf{\bar{A}}$ and $\mathbf{\bar{B}}$ denote the discretized state matrices:
 
 $$
 \mathbf{\bar{A}} = \exp(\Delta \mathbf{A})
 $$
 
 $$
-\mathbf{\bar{B}} = (\Delta \mathbf{A})^{-1} \left( \exp(\Delta \mathbf{A}) - \mathbf{I} \right) \cdot (\Delta \mathbf{B}) \approx \Delta \mathbf{B} \quad (\text{via first-order Taylor expansion})
+\mathbf{\bar{B}} = (\Delta \mathbf{A})^{-1} \left( \exp(\Delta \mathbf{A}) - \mathbf{I} \right) \cdot (\Delta \mathbf{B})
+$$
+
+Using a first-order Taylor series approximation for small $\Delta$:
+
+$$
+\mathbf{\bar{B}} \approx \Delta \mathbf{B}
 $$
 
 $$
-\mathbf{\bar{C}} = \mathbf{C}
-$$
-
-$$
-\text{Discrete SSM Equations: } \begin{cases} h_k = \mathbf{\bar{A}} h_{k-1} + \mathbf{\bar{B}} x_k \\ y_k = \mathbf{\bar{C}} h_k \end{cases}
+\text{Discrete SSM Recurrence: } \begin{cases} h_k = \mathbf{\bar{A}} h_{k-1} + \mathbf{\bar{B}} x_k \\ y_k = \mathbf{C} h_k \end{cases}
 $$
 
 ---
 
 ### 3.4 The Dual Representation of Linear Time-Invariant (LTI) SSMs
 
-When matrices $\mathbf{A}, \mathbf{B}, \mathbf{C}, \Delta$ are **Linear Time-Invariant (LTI)** (i.e., constant across all timesteps $k$), the system exhibits a mathematical duality: it can be executed as a **Recurrent Network** during inference and as a **1D Convolution** during training.
+When $\mathbf{A}, \mathbf{B}, \mathbf{C}, \Delta$ are constant over time (Linear Time-Invariant), the system exhibits mathematical duality:
 
-#### 3.4.1 Recurrent Representation (Fast Linear Inference)
-
-$$
-h_0 = \mathbf{\bar{B}} x_0
-$$
+#### 3.4.1 Recurrent Representation (Linear Inference Complexity)
 
 $$
-h_1 = \mathbf{\bar{A}} h_0 + \mathbf{\bar{B}} x_1 = \mathbf{\bar{A}} \mathbf{\bar{B}} x_0 + \mathbf{\bar{B}} x_1
+h_k = \mathbf{\bar{A}} h_{k-1} + \mathbf{\bar{B}} x_k, \qquad y_k = \mathbf{C} h_k
 $$
 
-$$
-h_k = \mathbf{\bar{A}} h_{k-1} + \mathbf{\bar{B}} x_k
-$$
-
-$$
-y_k = \mathbf{\bar{C}} h_k
-$$
-
-- **Inference Complexity:** Requires only storing the fixed-size vector $h_k \in \mathbb{R}^N$. Generating the next token is strictly $O(1)$ time and $O(1)$ memory.
+Generating token $k+1$ requires only loading the hidden state $h_k \in \mathbb{R}^N$, providing strict $O(1)$ compute and memory complexity per step.
 
 #### 3.4.2 Convolutional Representation (Parallel Training via FFT)
 
-Expanding the discrete recurrence explicitly across all timesteps from $k = 0$ to $L$:
+Expanding the discrete recurrence explicitly from timestep $0$ to $L$:
 
 $$
-y_0 = \mathbf{\bar{C}} \mathbf{\bar{B}} x_0
+y_k = \sum_{j=0}^{k} \mathbf{C} \mathbf{\bar{A}}^{k-j} \mathbf{\bar{B}} x_j
 $$
 
-$$
-y_1 = \mathbf{\bar{C}} \mathbf{\bar{A}} \mathbf{\bar{B}} x_0 + \mathbf{\bar{C}} \mathbf{\bar{B}} x_1
-$$
+This is a discrete 1D convolution with the SSM kernel $\mathbf{\bar{K}} \in \mathbb{R}^L$:
 
 $$
-y_2 = \mathbf{\bar{C}} \mathbf{\bar{A}}^2 \mathbf{\bar{B}} x_0 + \mathbf{\bar{C}} \mathbf{\bar{A}} \mathbf{\bar{B}} x_1 + \mathbf{\bar{C}} \mathbf{\bar{B}} x_2
-$$
-
-$$
-y_k = \sum_{j=0}^{k} \mathbf{\bar{C}} \mathbf{\bar{A}}^{k-j} \mathbf{\bar{B}} x_j
-$$
-
-This operation is a discrete convolution between the input sequence $\mathbf{x}$ and a non-causal/causal SSM convolution kernel $\mathbf{\bar{K}} \in \mathbb{R}^L$:
-
-$$
-\mathbf{\bar{K}} = \left( \mathbf{\bar{C}}\mathbf{\bar{B}}, \; \mathbf{\bar{C}}\mathbf{\bar{A}}\mathbf{\bar{B}}, \; \mathbf{\bar{C}}\mathbf{\bar{A}}^2\mathbf{\bar{B}}, \; \dots, \; \mathbf{\bar{C}}\mathbf{\bar{A}}^{L-1}\mathbf{\bar{B}} \right)
+\mathbf{\bar{K}} = \left( \mathbf{C}\mathbf{\bar{B}}, \mathbf{C}\mathbf{\bar{A}}\mathbf{\bar{B}}, \mathbf{C}\mathbf{\bar{A}}^2\mathbf{\bar{B}}, \dots, \mathbf{C}\mathbf{\bar{A}}^{L-1}\mathbf{\bar{B}} \right)
 $$
 
 $$
 y = x * \mathbf{\bar{K}}
 $$
 
-```text
-Convolutional Computation via Fast Fourier Transform (FFT):
-  Input Sequence x ────────► FFT ────┐
-                                     ▼
-  Precomputed Kernel K_bar ──► FFT ──► Elementwise Multiply ──► IFFT ──► Output y
-```
+By the **Convolution Theorem**, computing $y = x * \mathbf{\bar{K}}$ via the Fast Fourier Transform (FFT) requires only $O(L \log L)$ time and is executed in parallel across GPU threads during pre-training:
 
-By the Convolution Theorem, computing $y = x * \mathbf{\bar{K}}$ via FFT requires only $O(L \log L)$ time and can be computed entirely in parallel on GPUs during pre-training.
+$$
+y = \text{IFFT}\left( \text{FFT}(x) \cdot \text{FFT}(\mathbf{\bar{K}}) \right)
+$$
 
 ---
 
 ### 3.5 Long-Range Memory & The HiPPO Matrix
 
-If matrix $\mathbf{A}$ is initialized randomly, the recurrent hidden state $h_k = \mathbf{\bar{A}}^k h_0$ suffers from vanishing or exploding gradients over long sequences.
+If matrix $\mathbf{A}$ is initialized randomly, the recurrent power $\mathbf{\bar{A}}^k$ suffers from vanishing or exploding dynamics.
 
-**HiPPO (High-order Polynomial Projection Operators)** solves this by designing $\mathbf{A}$ such that the state vector $h(t)$ maintains an optimal online compression of the continuous history $x(\le t)$ projected onto an orthogonal basis of shifted Legendre polynomials:
+**HiPPO (High-order Polynomial Projection Operators)** initializes $\mathbf{A}$ such that the hidden state $h(t)$ maintains an optimal continuous projection of history onto shifted Legendre polynomials:
 
 $$
 \mathbf{A}_{\text{HiPPO}}(n, k) = \begin{cases} (2n + 1)^{1/2} (2k + 1)^{1/2}, & \text{if } n > k \\ n + 1, & \text{if } n = k \\ -(2n + 1)^{1/2} (2k + 1)^{1/2}, & \text{if } n < k \end{cases}
@@ -754,42 +702,27 @@ $$
 \mathbf{B}_{\text{HiPPO}}(n) = (2n + 1)^{1/2}
 $$
 
-```text
-HiPPO State Reconstruction Over Time:
-Continuous Signal x(t) ──► [ HiPPO Matrix A ] ──► Vector of Legendre Coefficients h(t)
-                                                           │
-                                                           ▼ Inverse Legendre Transform
-Reconstructed Historical Signal x_reconstructed(tau <= t) ◄─┘
-```
-
-The HiPPO initialization allows structured SSMs (S4) to solve long-range benchmarks (e.g., Path-X with $16\text{k}$ token contexts) that break standard RNNs and un-augmented Transformers.
-
 ---
 
 ### 3.6 The Fundamental Failure Mode of LTI SSMs: Content Invariance
 
-Despite their computational efficiency, LTI SSMs fail on fundamental linguistic reasoning tasks:
-1. **Selective Copying:** Memorizing a subset of key tokens while ignoring padding/stop-words.
-2. **Induction Heads:** Associating patterns like $[A][B] \dots [A] \to [B]$ (associative in-context recall).
+Because LTI matrices $\mathbf{A}, \mathbf{B}, \mathbf{C}, \Delta$ are static and independent of input content, LTI SSMs cannot dynamically adjust memory flow based on token identity.
 
 ```text
 Task 1: Selective Copying
 Input:   [BOS]  dog  [PAD]  [PAD]  cat  [PAD]  [EOS]
-LTI SSM: Memory state weights every token EQUALLY via static A, B.
-         Cannot selectively drop [PAD] without altering state dynamics!
+LTI SSM: Weights every token EQUALLY via static A, B. Cannot ignore [PAD]!
 
 Task 2: Induction Heads
 Input:   Harry ... Potter ... Harry ──► Target: [Potter]
-LTI SSM: Cannot dynamically trigger recall conditioned on token identity.
+LTI SSM: Cannot trigger dynamic memory recall conditioned on seeing "Harry" again.
 ```
-
-**Root Cause:** Because $\mathbf{A}, \mathbf{B}, \mathbf{C}, \Delta$ are static and independent of the input $x_k$, the model cannot modulate information flow based on sequence content.
 
 ---
 
 ### 3.7 Mamba: Selective State Spaces (S6)
 
-Mamba resolves the LTI dilemma by introducing **Selective State Spaces (S6)**, making matrices $\mathbf{B}, \mathbf{C}$ and the discretization step size $\Delta$ dynamic functions of the current input token $x$.
+Mamba solves content invariance by parameterizing $\mathbf{B}, \mathbf{C}$, and the discretization step size $\Delta$ as **functions of the current input token $x$**:
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -811,18 +744,18 @@ Mamba resolves the LTI dilemma by introducing **Selective State Spaces (S6)**, m
 
 #### 3.7.1 Mathematical Formulation of Selective Parameterization
 
-For an input batch of hidden representations $x \in \mathbb{R}^{B \times L \times D}$ (where $B$ is batch size, $L$ is sequence length, $D$ is model dimension, and $N$ is state expansion dimension):
+For an input tensor $x \in \mathbb{R}^{B \times L \times D}$:
 
 $$
-\mathbf{B}_k = \text{Linear}_{N}(x_k) \in \mathbb{R}^{B \times L \times N}
-$$
-
-$$
-\mathbf{C}_k = \text{Linear}_{N}(x_k) \in \mathbb{R}^{B \times L \times N}
+\mathbf{B}_k = W_B x_k \in \mathbb{R}^{B \times L \times N}
 $$
 
 $$
-\Delta_k = \text{Softplus}\left( \text{Parameter}_{\Delta} + \text{Linear}_{D}(x_k) \right) \in \mathbb{R}^{B \times L \times D}
+\mathbf{C}_k = W_C x_k \in \mathbb{R}^{B \times L \times N}
+$$
+
+$$
+\Delta_k = \text{Softplus}\left( \text{Parameter}_{\Delta} + W_{\Delta} x_k \right) \in \mathbb{R}^{B \times L \times D}
 $$
 
 $$
@@ -834,33 +767,24 @@ $$
 $$
 
 $$
-\text{Selective Recurrence: } h_k = \mathbf{\bar{A}}_k h_{k-1} + \mathbf{\bar{B}}_k x_k
-$$
-
-$$
-y_k = \mathbf{C}_k h_k
+\text{Selective Recurrence: } h_k = \mathbf{\bar{A}}_k h_{k-1} + \mathbf{\bar{B}}_k x_k, \qquad y_k = \mathbf{C}_k h_k
 $$
 
 #### 3.7.2 Physical Intuition of Step-Size Delta
 
-The input-dependent step size $\Delta_k$ acts as a continuous generalized gating mechanism:
-- **Large $\Delta_k \to \infty$:** $\mathbf{\bar{A}}_k = \exp(\Delta_k \mathbf{A}) \to 0$, while $\mathbf{\bar{B}}_k \to \text{large}$. The model **resets** the historical state $h_{k-1}$ and writes the current token $x_k$ into memory.
-- **Small $\Delta_k \to 0$:** $\mathbf{\bar{A}}_k = \exp(\Delta_k \mathbf{A}) \to \mathbf{I}$, while $\mathbf{\bar{B}}_k \to 0$. The model **ignores** the current token $x_k$ (e.g., punctuation, padding) and preserves historical context $h_{k-1}$ unchanged.
+- **Large $\Delta_k \to \infty$:** $\mathbf{\bar{A}}_k = \exp(\Delta_k \mathbf{A}) \to 0$, while $\mathbf{\bar{B}}_k \to \text{large}$. The model **resets** old history and writes current token $x_k$ into memory.
+- **Small $\Delta_k \to 0$:** $\mathbf{\bar{A}}_k = \exp(\Delta_k \mathbf{A}) \to \mathbf{I}$, while $\mathbf{\bar{B}}_k \to 0$. The model **ignores** current token $x_k$ and preserves existing memory unchanged.
 
 ---
 
 ### 3.8 Systems Innovations for Selective SSMs
 
-Making $\mathbf{B}, \mathbf{C}, \Delta$ time-varying breaks the convolutional representation ($y = x * \mathbf{\bar{K}}$ no longer holds because the kernel changes at every token). Without FFTs, naive recurrence would force sequential $O(L)$ execution during training, abandoning GPU parallelization.
+#### 3.8.1 The Parallel Associative Scan (Blelloch Algorithm)
 
-Mamba solves this through three hardware-centric algorithmic innovations:
-
-#### 3.8.1 The Parallel Associative Scan
-
-The discrete recurrence $h_k = \mathbf{\bar{A}}_k h_{k-1} + \mathbf{\bar{B}}_k x_k$ can be formulated as an **associative binary operator** $\circ$:
+Time-varying $\mathbf{\bar{A}}_k, \mathbf{\bar{B}}_k$ prevents FFT convolution. Mamba formulates the recurrence as an **associative binary operator** $\circ$:
 
 $$
-(a_j, b_j) \circ (a_i, b_i) = (a_j \cdot a_i, \; a_j \cdot b_i + b_j)
+(a_j, b_j) \circ (a_i, b_i) = (a_j \cdot a_i, a_j \cdot b_i + b_j)
 $$
 
 ```text
@@ -880,7 +804,7 @@ All intermediate prefix sums materialized concurrently!
 Total Compute Work: O(L) | Parallel Execution Span / Depth: O(log L)
 ```
 
-Using parallel prefix sum algorithms (Blelloch scan), the sequence of hidden states is computed in $O(\log L)$ parallel depth across GPU thread blocks.
+The sequence of hidden states is computed in parallel across GPU threads in **$O(\log L)$ span/depth** with **$O(L)$ total work**.
 
 #### 3.8.2 Hardware-Aware Memory Hierarchy & Kernel Fusion
 
@@ -904,15 +828,9 @@ Using parallel prefix sum algorithms (Blelloch scan), the sequence of hidden sta
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Memory Traffic Reduction:** Instead of reading/writing the giant intermediate state tensor of shape $(B, L, D, N)$ to slow HBM, Mamba fuses Discretization, Scan, and Readout into a single GPU kernel executed entirely in fast on-chip SRAM.
-
 #### 3.8.3 Activation Recomputation in the Backward Pass
 
-During backpropagation, computing gradients requires the intermediate states $h_k$. Instead of saving all $h_k$ in HBM during the forward pass (which would consume gigabytes of memory), Mamba **discards** $h_k$ and recomputes it dynamically in SRAM during the backward pass.
-
-$$
-\text{Memory Overhead: } O(L \cdot D) \quad \text{instead of} \quad O(L \cdot D \cdot N)
-$$
+Instead of saving expanded intermediate states $(B, L, D, N)$ in HBM during the forward pass, Mamba discards them and recomputes them dynamically in fast SRAM during backpropagation, bounding activation memory to **$O(L \cdot D)$** instead of $O(L \cdot D \cdot N)$.
 
 ---
 
@@ -954,11 +872,13 @@ $$
 
 ### 4.1 Anatomy of GPU Memory in Large Language Models
 
-To train multi-billion parameter models, memory consumption must be decomposed into its constituent elements.
-
 #### 4.1.1 The 16 Bytes per Parameter Rule in Mixed-Precision Adam
 
-In standard mixed-precision training (e.g., FP16/BF16 forward/backward with FP32 Adam optimizer), **each model parameter requires 16 bytes of static GPU memory**:
+In mixed-precision training (BF16 forward/backward with FP32 Adam optimizer), static memory consumption equals **16 bytes per parameter**:
+
+$$
+\text{Memory}_{\text{static}} = \underbrace{2\Phi}_{\text{Weights (BF16)}} + \underbrace{2\Phi}_{\text{Gradients (BF16)}} + \underbrace{4\Phi}_{\text{Master Weights (FP32)}} + \underbrace{4\Phi}_{\text{Momentum } m \text{ (FP32)}} + \underbrace{4\Phi}_{\text{Variance } v \text{ (FP32)}} = \mathbf{16\Phi\text{ Bytes}}
+$$
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -977,50 +897,39 @@ In standard mixed-precision training (e.g., FP16/BF16 forward/backward with FP32
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### 4.1.2 The Mathematical Necessity of FP32 Master Weights & Optimizer States
-
-Why can we not simply train entirely in FP16?
+#### 4.1.2 Mathematical Proof: Why FP32 Master Weights & Optimizer States Are Required
 
 1. **Underflow of Gradient Updates:**
-   In FP16, the minimum positive subnormal value is $\approx 5.96 \times 10^{-8}$, and the minimum normal value is $\approx 6.10 \times 10^{-5}$. A standard weight update is:
+   In FP16, machine epsilon is $\epsilon_{\text{FP16}} \approx 9.77 \times 10^{-4}$. A standard learning rate update:
    $$
    \Delta w = \eta \cdot g_t = 10^{-4} \times 10^{-3} = 10^{-7}
    $$
-   If added directly to an FP16 weight $w = 1.5000$, the machine epsilon $\epsilon_{\text{FP16}} \approx 9.77 \times 10^{-4}$. The update $\Delta w$ is rounded down to $0$, causing optimization to stall completely.
-2. **Compounding Variance in Momentum/Variance Accumulators:**
-   Adam tracks running exponential moving averages:
+   Adding $10^{-7}$ directly to an FP16 weight ($w \approx 1.0$) causes underflow ($\Delta w \to 0$), freezing model updates.
+
+2. **Compound Rounding Errors in Adam Moving Averages:**
    $$
-   m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t
+   m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t, \qquad v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2
    $$
-   $$
-   v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2
-   $$
-   Over $100,000$ iterations, FP16 rounding errors compound non-linearly, causing numerical divergence.
+   Accumulating these recursive sums over $10^5$ steps in 16-bit precision leads to variance collapse and loss divergence.
 
 ---
 
-### 4.2 Data Parallelism (DDP) & Collective All-Reduce
+### 4.2 Data Parallelism (DDP) & Ring All-Reduce Proofs
 
-In Distributed Data Parallelism (DDP), the model is replicated across $N$ GPUs. Each GPU processes an independent mini-batch of data of size $B_{\text{local}} = B_{\text{global}} / N$.
+In Distributed Data Parallelism, $N$ GPUs compute independent mini-batch gradients $\nabla \mathcal{L}_i$. Ring All-Reduce averages gradients in two phases:
 
-```text
-GPU 0 (Local Batch 0) ──► Forward ──► Backward ──► Local Grads ∇L_0 ──┐
-                                                                      │
-GPU 1 (Local Batch 1) ──► Forward ──► Backward ──► Local Grads ∇L_1 ──┼──► [ Ring All-Reduce ]
-                                                                      │    ∇L = 1/N * sum(∇L_i)
-GPU 2 (Local Batch 2) ──► Forward ──► Backward ──► Local Grads ∇L_2 ──┤           │
-                                                                      │           ▼
-GPU 3 (Local Batch 3) ──► Forward ──► Backward ──► Local Grads ∇L_3 ──┘    All GPUs update with
-                                                                           identical averaged ∇L
-```
+1. **Reduce-Scatter:** Each GPU receives an aggregated $1/N$ gradient shard after communicating $\frac{N-1}{N} \times |W|$ bytes.
+2. **All-Gather:** Each GPU broadcasts its updated $1/N$ shard after communicating $\frac{N-1}{N} \times |W|$ bytes.
 
-- **Ring All-Reduce Communication:** Communicates $2 \times \frac{N-1}{N} \times |W|$ bytes per step in two phases: **Reduce-Scatter** followed by **All-Gather**.
+$$
+\text{Total All-Reduce Communication Volume} = 2 \times \left(\frac{N-1}{N}\right) \times |W| \text{ bytes}
+$$
 
 ---
 
 ### 4.3 Tensor Parallelism (Megatron-LM Intra-Layer Slicing)
 
-When a single layer is too large to fit in GPU memory, **Tensor Parallelism (TP)** shards weight matrices across GPUs along rows or columns within the same node over NVLink.
+Tensor Parallelism shards individual weight matrices across GPUs within the same server over NVLink.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -1036,58 +945,42 @@ When a single layer is too large to fit in GPU memory, **Tensor Parallelism (TP)
 
 #### 4.3.1 Slicing the Multi-Layer Perceptron (MLP) Block
 
-The Transformer MLP consists of an up-projection $W_1 \in \mathbb{R}^{d \times 4d}$ followed by a down-projection $W_2 \in \mathbb{R}^{4d \times d}$:
-
 $$
 \text{MLP}(X) = \text{GeLU}(X W_1) W_2
 $$
 
-1. **Column-Parallel Linear 1:**
-   Split $W_1$ along columns into $N$ shards: $W_1 = [W_{1,0} \mid W_{1,1} \mid \dots \mid W_{1,N-1}]$, where $W_{1,i} \in \mathbb{R}^{d \times \frac{4d}{N}}$.
+1. **Column-Parallel Linear 1:** Slices $W_1$ column-wise into $N$ shards $[W_{1,0} \mid W_{1,1} \mid \dots \mid W_{1,N-1}]$. Because $\text{GeLU}$ is element-wise:
    $$
-   Y_{1,i} = X W_{1,i}
+   Z_i = \text{GeLU}(X W_{1,i}) \quad (\text{Zero inter-GPU communication required})
    $$
-   Because $\text{GeLU}(\cdot)$ is an element-wise operator:
+
+2. **Row-Parallel Linear 2:** Slices $W_2$ row-wise:
    $$
-   Z_i = \text{GeLU}(Y_{1,i}) = \text{GeLU}(X W_{1,i})
+   Y = \sum_{i=0}^{N-1} Z_i W_{2,i}
    $$
-   **Zero inter-GPU communication is required after Linear 1!**
-2. **Row-Parallel Linear 2:**
-   Split $W_2$ along rows into $N$ shards matching the output of $Z$:
-   $$
-   W_2 = \begin{bmatrix} W_{2,0} \\ W_{2,1} \\ \vdots \\ W_{2,N-1} \end{bmatrix}, \quad \text{where } W_{2,i} \in \mathbb{R}^{\frac{4d}{N} \times d}
-   $$
-   Each GPU computes local matrix multiplication:
-   $$
-   \text{Partial}_i = Z_i W_{2,i} \in \mathbb{R}^{B \times d}
-   $$
-   By block matrix multiplication:
-   $$
-   Y = Z W_2 = \sum_{i=0}^{N-1} Z_i W_{2,i} = \sum_{i=0}^{N-1} \text{Partial}_i
-   $$
-   A single **All-Reduce (Sum)** collective combines the partial sums across GPUs, returning the identical mathematical output $Y$ to all devices.
+   A single **All-Reduce (Sum)** operation across ranks yields mathematically exact output $Y$.
 
 #### 4.3.2 Slicing Multi-Head Self-Attention (MHSA)
 
-- **$W_Q, W_K, W_V$ Projections:** Column-parallel (split across attention heads).
-- **$W_O$ Output Projection:** Row-parallel (combines head outputs via a single All-Reduce).
-- **Communication Cost:** Exactly $2 \times \text{All-Reduce}$ per Transformer layer in the forward pass, and $2 \times \text{All-Reduce}$ in the backward pass.
+- $W_Q, W_K, W_V$ projections are sliced column-wise across attention heads.
+- $W_O$ output projection is sliced row-wise and summed via a single All-Reduce.
+- **Communication Volume:** Exactly $2 \times \text{All-Reduce}$ per layer in the forward pass, and $2 \times \text{All-Reduce}$ in the backward pass.
 
 ---
 
 ### 4.4 Pipeline Parallelism (PP) & Inter-Layer Scheduling
 
-Pipeline Parallelism partitions the sequential layers of a network across $P$ pipeline stages (GPUs).
+#### 4.4.1 The Pipeline Bubble: Exact Derivation
 
-#### 4.4.1 The Pipeline Bubble & Mathematical Formulation
+When partitioning $L$ layers across $p$ pipeline stages with $m$ micro-batches ($m \gg p$):
 
-If a batch is executed as a monolithic unit, downstream GPUs sit idle waiting for upstream activations, creating a **pipeline bubble**:
+$$
+t_{\text{idle}} = (p - 1) \cdot (t_F + t_B), \qquad t_{\text{total}} = (m + p - 1) \cdot (t_F + t_B)
+$$
 
 $$
 F_{\text{bubble}} = \frac{t_{\text{idle}}}{t_{\text{total}}} = \frac{p - 1}{p - 1 + m}
 $$
-
-Where $p$ is the number of pipeline stages, and $m$ is the number of micro-batches ($m \gg p$).
 
 ```text
 GPipe Schedule (p = 4 stages, m = 4 micro-batches):
@@ -1102,17 +995,9 @@ Peak Activation Memory on GPU 0 = O(m) micro-batches!
 
 #### 4.4.2 Mathematical Equivalence of Micro-Batch Gradient Accumulation
 
-Splitting a mini-batch of size $B$ into $m$ micro-batches of size $b = B/m$ computes mathematically identical gradients:
-
 $$
-\mathcal{L}_{\text{full}}(W) = \frac{1}{B} \sum_{i=1}^{B} \ell(x_i; W) = \frac{1}{m} \sum_{k=1}^{m} \left( \frac{1}{b} \sum_{j=1}^{b} \ell(x_{k,j}; W) \right) = \frac{1}{m} \sum_{k=1}^{m} \mathcal{L}_k(W)
+\nabla_W \mathcal{L}_{\text{full}}(W) = \frac{1}{B} \sum_{i=1}^B \nabla_W \ell(x_i; W) = \frac{1}{m} \sum_{k=1}^m \left( \frac{1}{b} \sum_{j=1}^b \nabla_W \ell(x_{k,j}; W) \right) = \frac{1}{m} \sum_{k=1}^m \nabla_W \mathcal{L}_k(W)
 $$
-
-$$
-\nabla_W \mathcal{L}_{\text{full}}(W) = \frac{1}{m} \sum_{k=1}^{m} \nabla_W \mathcal{L}_k(W)
-$$
-
-Accumulating micro-batch gradients in place (`grad_buffer += dL_k/dW`) is bit-for-bit identical to full batch processing.
 
 #### 4.4.3 GPipe vs. 1F1B Schedule Activation Footprints
 
@@ -1123,16 +1008,16 @@ GPU 0:   [F1] [F2] [F3] [F4] [B1] [F5] [B2] [F6] ...
 Act Mem:  +1   +2   +3   +4   -1   +4   -1   +4   (Bounded at p = 4!)
 ```
 
-- **GPipe:** Executes all $m$ forward passes before any backward pass. Peak memory scales with micro-batches $O(m)$.
-- **1F1B (Megatron/DeepSpeed):** After a warmup phase of $p$ steps, alternates 1 Forward with 1 Backward. Each backward pass frees the activations of that micro-batch, bounding peak activation memory to $O(p)$, independent of $m$.
+- **GPipe:** Peak activation memory scales with micro-batches $O(m)$.
+- **1F1B (Megatron-LM):** Peak activation memory is strictly bounded by pipeline stages $O(p)$, independent of $m$.
 
 ---
 
 ### 4.5 Context Parallelism (CP) & Ring Attention
 
-For extreme context windows ($128\text{k}-1\text{M}$ tokens), self-attention memory becomes the dominant bottleneck. Context Parallelism shards the sequence length dimension $L$ across $N$ GPUs.
-
 #### 4.5.1 The Ring Communication Topology
+
+For long sequences ($128\text{k} - 1\text{M}$ tokens), sequence length $L$ is partitioned into chunks of size $L/N$ across $N$ GPUs organized in a ring.
 
 ```text
 Ring Attention Execution Over 4 GPUs (Sequence Length L sharded into 4 chunks):
@@ -1147,36 +1032,27 @@ Step 3...N: Repeat until all N KV blocks traverse the ring.
 All-to-all attention computed with zero memory footprint for the full L x L matrix!
 ```
 
-#### 4.5.2 Online Numerically Stable Softmax Accumulation
+#### 4.5.2 Online Numerically Stable Softmax Accumulation Proof
 
-Because softmax requires the global row-wise maximum $\max(S)$, computing attention across sharded blocks incrementally requires **Online Softmax rescaling** (Milakov & Gimelshein, 2018):
+Let block $1$ have local maximum $m_1$, normalizer $d_1 = \sum e^{S_{1,j} - m_1}$, and unnormalized accumulator $O_1$. When block $2$ arrives with stats $(m_2, d_2, O_2)$:
 
-```text
-Online Softmax Update Step:
-Given Old Block Stats: (Max_old, Sum_old, Output_old)
-Given New Block Stats: (Max_new, Sum_new, Output_new)
+$$
+m_{\text{new}} = \max(m_1, m_2)
+$$
 
-1. Compute Global Max:
-   Max_global = max(Max_old, Max_new)
+$$
+d_{\text{new}} = d_1 \cdot \exp(m_1 - m_{\text{new}}) + d_2 \cdot \exp(m_2 - m_{\text{new}})
+$$
 
-2. Rescale Correction Factors:
-   alpha_old = exp(Max_old - Max_global)
-   alpha_new = exp(Max_new - Max_global)
+$$
+O_{\text{new}} = \frac{O_1 \cdot d_1 \cdot \exp(m_1 - m_{\text{new}}) + O_2 \cdot d_2 \cdot \exp(m_2 - m_{\text{new}})}{d_{\text{new}}}
+$$
 
-3. Update Normalization Denominator:
-   Sum_total = Sum_old * alpha_old + Sum_new * alpha_new
-
-4. Accumulate Output Representation:
-   Output_final = (Output_old * Sum_old * alpha_old + Output_new * Sum_new * alpha_new) / Sum_total
-```
-
-This formulation allows Ring Attention to compute numerically exact full self-attention without ever materializing the global attention matrix.
+This guarantees bit-level mathematical equivalence to monolithic softmax without materializing the global attention score matrix in memory.
 
 ---
 
 ### 4.6 ZeRO (Zero Redundancy Optimizer) & FSDP Mechanics
-
-ZeRO eliminates the memory redundancy inherent in standard data parallelism by sharding optimizer states, gradients, and parameters across the data-parallel world.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -1205,20 +1081,22 @@ ZeRO eliminates the memory redundancy inherent in standard data parallelism by s
 ```
 
 #### 4.6.1 ZeRO-Stage 1: Optimizer State Sharding
-- **Mechanism:** Partitions FP32 Adam states ($m, v$, master weights) into $N_{\text{data}}$ shards.
-- **Workflow:** Standard forward/backward $\to$ Gradient All-Reduce $\to$ Each GPU updates only its local $1/N$ parameter shard $\to$ Post-step **All-Gather** to synchronize updated parameters.
-- **Memory Saved:** Reduces static optimizer memory from $12 \times \Phi$ to $\frac{12 \times \Phi}{N}$.
+- Partitions FP32 Adam states ($12\Phi$) across $N$ ranks. Memory per GPU:
+  $$
+  M_{\text{ZeRO-1}} = 2\Phi + 2\Phi + \frac{12\Phi}{N}
+  $$
 
 #### 4.6.2 ZeRO-Stage 2: Gradient Sharding
-- **Mechanism:** Instead of All-Reduce (which sends all gradients to all GPUs), runs **Reduce-Scatter**.
-- **Workflow:** Each GPU receives and retains averaged gradients *only* for its assigned parameter shard. All other gradients are discarded immediately during backpropagation.
-- **Memory Saved:** Reduces gradient buffer memory from $2 \times \Phi$ to $\frac{2 \times \Phi}{N}$.
+- Retains gradients only for assigned parameter shards via Reduce-Scatter. Memory per GPU:
+  $$
+  M_{\text{ZeRO-2}} = 2\Phi + \frac{2\Phi}{N} + \frac{12\Phi}{N}
+  $$
 
 #### 4.6.3 ZeRO-Stage 3: Parameter Sharding (Fully Sharded Data Parallel)
-- **Mechanism:** Parameters themselves are partitioned across all GPUs.
-- **Workflow:**
-  1. **Before Layer $L$ Forward:** All GPUs run an **All-Gather** to assemble Layer $L$'s weights $\to$ Compute forward pass $\to$ Non-owning GPUs **immediately discard** Layer $L$'s parameters from memory.
-  2. **Before Layer $L$ Backward:** All GPUs run an **All-Gather** to re-materialize Layer $L$'s weights $\to$ Compute gradients $\to$ Run **Reduce-Scatter** for gradients $\to$ Discard parameters again.
+- Shards parameters themselves across ranks. Layers are gathered on-the-fly and discarded immediately after forward/backward execution. Memory per GPU:
+  $$
+  M_{\text{ZeRO-3}} = \frac{2\Phi}{N} + \frac{2\Phi}{N} + \frac{12\Phi}{N} = \frac{16\Phi}{N}
+  $$
 
 #### 4.6.4 Communication vs. Memory Trade-Off Across Stages
 
@@ -1233,26 +1111,13 @@ ZeRO eliminates the memory redundancy inherent in standard data parallelism by s
 
 ### 4.7 Operator & Kernel Fusion (FlashAttention Deep Dive)
 
-Standard attention materializes an $L \times L$ attention score matrix in HBM, requiring $O(L^2)$ memory reads and writes:
+Standard attention incurs $O(L^2)$ HBM memory read/writes:
 
-```text
-Standard Attention (Memory Wall Bottleneck):
-  1. S = Q K^T          ──► Write S [B, H, L, L] to HBM
-  2. P = softmax(S)     ──► Read S from HBM, Write P [B, H, L, L] to HBM
-  3. O = P V            ──► Read P from HBM, Write O [B, H, L, d] to HBM
-  Total HBM Transfers: O(L^2) bytes (Massive memory-bound bottleneck!)
+$$
+S = Q K^T \in \mathbb{R}^{L \times L}, \qquad P = \text{softmax}(S) \in \mathbb{R}^{L \times L}, \qquad O = P V \in \mathbb{R}^{L \times d}
+$$
 
-FlashAttention (Tiled On-Chip SRAM Fusion):
-  ┌──────────────────────────────────────────────────────────────────┐
-  │ For each Block of Q (in SRAM):                                  │
-  │   For each Block of K, V (in SRAM):                             │
-  │     1. Compute S_tile = Q_tile * K_tile^T                        │
-  │     2. Compute Online Softmax on S_tile (Update running max/sum) │
-  │     3. Accumulate O_tile += P_tile * V_tile in SRAM              │
-  │ Write ONLY final output O to HBM!                                │
-  │ Memory Complexity: O(L) in HBM | Speedup: 2x - 4x                │
-  └──────────────────────────────────────────────────────────────────┘
-```
+FlashAttention partitions $Q, K, V$ into tiles of size $B_r \times d$ and $B_c \times d$ that fit inside on-chip SRAM, computing online softmax rescaling entirely within SRAM and reducing HBM transfers from $O(L^2)$ to $O(L)$.
 
 ---
 
@@ -1284,40 +1149,30 @@ FlashAttention (Tiled On-Chip SRAM Fusion):
 
 ### 5.1 The Economic Calculus of LLM Serving: TCO & Unit Cost per Token
 
-In commercial API deployments (e.g., OpenAI, Anthropic, DeepSeek, OpenRouter), access to models is priced per token. The underlying profitability is strictly determined by **hardware unit economics**:
+In production inference systems, model serving profitability is determined by unit token cost:
 
 $$
-\text{Cost per Token} = \frac{\text{Hourly GPU Server Cost}}{\text{Tokens Generated per Hour}}
+\text{Cost per Token} = \frac{\text{Hourly GPU Server Cost}}{\text{Tokens Generated per Hour}} = \frac{\text{Hourly Cost}}{\text{Throughput (Tokens/s)} \times 3600}
 $$
-
-$$
-\text{Tokens per Hour} = \text{Throughput (Tokens/s)} \times 3600\text{ s}
-$$
-
-- **Hardware Amortization & TCO:** An 8x H100 node costs $\approx \$300,000$ to purchase or $\$20 - \$30/\text{hr}$ to rent on cloud providers.
-- **The Core Objective:** Maximize the aggregate token generation rate ($\text{Tokens/s}$) across the cluster to minimize the amortized cost per token.
 
 ---
 
 ### 5.2 The Two Execution Phases: Prefill vs. Decoding
-
-LLM inference operates in two fundamentally distinct regimes with opposite computational profiles:
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                       PREFILL VS. DECODING PHASES                           │
 │                                                                             │
 │  [Phase 1: Prefill / Prompt Processing]                                     │
-│   Input: Full prompt of S tokens in parallel ──► Matrix-Matrix GEMM (BLAS3) │
+│   Input: Full prompt of S tokens in parallel ──► Matrix-Matrix GEMM         │
 │   - Compute-Bound (Very High Arithmetic Intensity: I >> I_knee)             │
-│   - Generates the first token; determines Time To First Token (TTFT).       │
-│   - Efficiently saturates Tensor Core TFLOPs.                               │
+│   - Sets the Time To First Token (TTFT).                                    │
 │                                                                             │
 │  [Phase 2: Autoregressive Decoding]                                         │
-│   Input: 1 token at a time ──► Matrix-Vector GEMV (BLAS2)                   │
+│   Input: 1 token at a time ──► Matrix-Vector GEMV                           │
 │   - Memory-Bound (Very Low Arithmetic Intensity: I << I_knee)               │
-│   - Must stream all model weights (2 * Phi bytes) from HBM for EVERY token! │
-│   - Determines Time Per Output Token (TPOT) and generation speed (tps).     │
+│   - Must read all model weights (2 * Phi bytes) from HBM for EVERY token!   │
+│   - Sets the Time Per Output Token (TPOT) and generation speed.             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -1325,106 +1180,91 @@ LLM inference operates in two fundamentally distinct regimes with opposite compu
 
 ### 5.3 First-Principles FLOP & Parameter Counting (Case Study: LLaMA 3.3 70B)
 
-Let us derive the exact parameters and FLOP requirements for a modern flagship architecture (LLaMA 3.3 70B: $d = 8192$, $L = 80$ layers, $V = 128,256$ vocabulary, Grouped-Query Attention with $n_q = 64$ heads, $n_{kv} = 8$ heads, and SwiGLU MLP intermediate size $d_{\text{ffn}} = 28,672$).
+Consider a transformer with hidden dimension $d$, $L$ layers, vocabulary $V$, $n_q$ query heads, $n_{kv}$ key-value heads ($r = n_{kv}/n_q$), and SwiGLU intermediate size $d_{\text{ffn}}$.
 
 #### 5.3.1 Layer-by-Layer FLOP Derivations
 
-Recall that multiplying an $m \times n$ matrix by an $n \times o$ matrix takes $2mno$ FLOPs ($n$ multiplications and $n-1 \approx n$ additions per element).
+Multiplying an $m \times k$ matrix by a $k \times n$ matrix requires $2mkn$ FLOPs.
 
-For a sequence of $S$ tokens:
+For sequence length $S$:
 
-1. **RMSNorm Operations ($4 \times S \times d$ FLOPs per norm):**
+1. **RMSNorm Operations ($4Sd$ FLOPs per normalization):**
    $$
-   \text{FLOPs}_{\text{RMSNorm}} = S \cdot d \text{ (square)} + S \cdot d \text{ (sum)} + S \cdot d \text{ (div)} + S \cdot d \text{ (scale)} \approx 4 S d
+   \text{FLOPs}_{\text{RMSNorm}} = S \cdot d \text{ (square)} + S \cdot d \text{ (sum)} + S \cdot d \text{ (div)} + S \cdot d \text{ (scale)} = 4Sd
    $$
+
 2. **Query Projection ($W_Q \in \mathbb{R}^{d \times d}$):**
    $$
-   \text{FLOPs}_Q = 2 \cdot S \cdot d \cdot d = 2 S d^2
+   \text{FLOPs}_Q = 2 S d^2
    $$
-3. **Key & Value Projections ($W_K, W_V \in \mathbb{R}^{d \times \frac{d}{8}}$ for GQA with 8 KV heads):**
+
+3. **Key & Value Projections ($W_K, W_V \in \mathbb{R}^{d \times r d}$):**
    $$
-   \text{FLOPs}_{KV} = 2 \times \left( 2 \cdot S \cdot d \cdot \frac{d}{8} \right) = \frac{1}{2} S d^2
+   \text{FLOPs}_{KV} = 2 \times \left( 2 S d \cdot (r d) \right) = 4 r S d^2 \quad \left(\text{For } r = \frac{1}{8}, \text{ FLOPs}_{KV} = 0.5 S d^2\right)
    $$
-4. **Rotary Position Embedding (RoPE):**
+
+4. **Attention Computations ($Q K^T$ and $A V$):**
    $$
-   \text{FLOPs}_{\text{RoPE}} \approx 3 \cdot S \cdot d
+   \text{FLOPs}_{QK^T} = 2 S^2 d, \qquad \text{FLOPs}_{AV} = 2 S^2 d
    $$
-5. **Attention Matrix Multiplications ($Q K^T$ and $A V$):**
+
+5. **Output Projection ($W_O \in \mathbb{R}^{d \times d}$):**
    $$
-   \text{FLOPs}_{QK^T} = 2 \cdot S \cdot S \cdot d = 2 S^2 d, \qquad \text{FLOPs}_{AV} = 2 \cdot S \cdot S \cdot d = 2 S^2 d
+   \text{FLOPs}_O = 2 S d^2
    $$
-6. **Output Attention Projection ($W_O \in \mathbb{R}^{d \times d}$):**
+
+6. **SwiGLU Feed-Forward Network ($W_{\text{gate}}, W_{\text{up}}, W_{\text{down}} \in \mathbb{R}^{d \times d_{\text{ffn}}}$):**
    $$
-   \text{FLOPs}_O = 2 \cdot S \cdot d \cdot d = 2 S d^2
-   $$
-7. **SwiGLU Feed-Forward Network (Gate $W_{\text{gate}}$, Up $W_{\text{up}}$, Down $W_{\text{down}}$ with $d_{\text{ffn}} = 3.5 d$):**
-   $$
-   \text{FLOPs}_{\text{FFN}} = 3 \times \left( 2 \cdot S \cdot d \cdot d_{\text{ffn}} \right) = 6 \cdot S \cdot d \cdot (3.5 d) = 21 S d^2
+   \text{FLOPs}_{\text{FFN}} = 3 \times \left( 2 S d d_{\text{ffn}} \right) = 6 S d d_{\text{ffn}} \quad (\text{For } d_{\text{ffn}} = 3.5d, \text{ FLOPs}_{\text{FFN}} = 21 S d^2)
    $$
 
 $$
-\text{Total FLOPs per Layer} \approx \left( 2 + \frac{1}{2} + 2 + 21 \right) S d^2 + 4 S^2 d = 25.5 S d^2 + 4 S^2 d
+\text{Total Layer FLOPs} = \left( 4 + 4r + \frac{6 d_{\text{ffn}}}{d} \right) S d^2 + 4 S^2 d
 $$
 
-When generating a single token ($S = 1$), the attention quadratic term $4 S^2 d$ is negligible, yielding the universal rule of thumb:
+During single-token decoding ($S = 1$), attention quadratic terms are negligible:
 
 $$
-\text{Forward Pass Compute per Token} \approx 2 \times \Phi \text{ FLOPs}
+\text{Forward Compute per Token} \approx 2 \times \Phi \text{ FLOPs}
 $$
-
-Where $\Phi$ is the total parameter count.
 
 #### 5.3.2 Total Parameter Calculation
 
 $$
-\begin{aligned}
-\text{Total Parameters} &= \underbrace{V \cdot d}_{\text{Embedding}} + L \cdot \left[ \underbrace{\left( 1 + \frac{1}{8} + \frac{1}{8} + 1 \right) d^2}_{\text{Attention: } Q, K, V, O} + \underbrace{3 \cdot d \cdot (3.5 d)}_{\text{SwiGLU: Gate, Up, Down}} + \underbrace{2 d}_{\text{RMSNorms}} \right] + \underbrace{d}_{\text{Final Norm}} + \underbrace{d \cdot V}_{\text{LM Head}} \\
-&= 128256 \cdot 8192 + 80 \cdot \left( 12.75 \cdot 8192^2 + 2 \cdot 8192 \right) + 8192 + 8192 \cdot 128256 \\
-&= 70,553,706,496 \text{ parameters} \approx \mathbf{70.55\text{ Billion}}
-\end{aligned}
+\Phi = 2 V d + L \left[ 2 d^2 (1 + r) + 3 d d_{\text{ffn}} + 2 d \right] + d
 $$
 
-At BF16 precision ($2\text{ bytes/param}$), storing model weights alone requires:
+For LLaMA 3.3 70B ($d = 8192, L = 80, V = 128256, r = 1/8, d_{\text{ffn}} = 28672$):
 
 $$
-\text{Weight Storage} = 70.55 \times 10^9 \times 2 = \mathbf{141.1\text{ GB}}
+\Phi = 2(128256)(8192) + 80\left[ 2(8192^2)(1.125) + 3(8192)(28672) + 2(8192) \right] + 8192 = \mathbf{70,553,706,496\text{ parameters}}
+$$
+
+At BF16 precision ($2\text{ bytes/param}$):
+
+$$
+\text{Model Weight Memory} = 70.5537 \times 10^9 \times 2 = \mathbf{141.1\text{ GB}}
 $$
 
 ---
 
 ### 5.4 The KV Cache: Eliminating Redundant Attention Computations
 
-Without caching, computing the $t$-th generated token requires re-computing Key and Value projections for all preceding $t-1$ tokens, forcing $O(L^2)$ redundant matrix multiplications.
+Without caching, generating token $t$ requires recomputing attention over all $t-1$ historical tokens, resulting in $O(L^2)$ total operations:
 
-The **KV Cache** stores the calculated Key and Value activation vectors in GPU memory, converting generation to $O(1)$ compute per step and $O(L)$ total generation complexity.
+$$
+\text{Operations}_{\text{NoCache}} = \sum_{t=1}^L (2\Phi + 4 t d) = 2 L \Phi + 2 L^2 d = O(L^2)
+$$
 
-```text
-Without KV Cache (Catastrophic O(L^2) Redundancy):
-Token 1: Compute QKV for [t0] ───────────────► 1 token compute
-Token 2: Re-compute QKV for [t0, t1] ────────► 2 tokens compute
-Token 3: Re-compute QKV for [t0, t1, t2] ────► 3 tokens compute
-...
-Token L: Re-compute QKV for [t0 ... tL-1] ───► L tokens compute
-Total Operations: sum_{k=1}^L k = O(L^2)
-
-With KV Cache (O(1) Step-Wise Generation):
-Token 1: Compute & Save KV_0 in memory ──────► 1 token compute
-Token 2: Load [KV_0], Compute & Append KV_1 ──► 1 token compute
-Token 3: Load [KV_0, KV_1], Append KV_2 ─────► 1 token compute
-Total Operations: O(L)
-```
+Caching Key and Value vectors reduces generation to strict **$O(L)$ total operations** ($O(1)$ compute per step).
 
 #### 5.4.1 Mathematical Memory Footprint Formulation
 
-For a model with $L$ layers, $n_{kv}$ key-value heads, head dimension $d_{\text{head}}$, batch size $B$, and context length $S$, stored in 16-bit precision ($2\text{ bytes}$):
-
 $$
-\text{KV Cache Memory (Bytes)} = 2 \times \underbrace{2}_{\text{K and V}} \times n_{\text{layers}} \times n_{\text{kv\_heads}} \times d_{\text{head}} \times S \times B
+\text{KV Cache Size (Bytes)} = 2 \times \underbrace{2}_{\text{K and V}} \times n_{\text{layers}} \times n_{\text{kv\_heads}} \times d_{\text{head}} \times S \times B \times b_{\text{elem}}
 $$
 
-$$
-\text{KV Cache per Token} = 4 \times n_{\text{layers}} \times n_{\text{kv\_heads}} \times d_{\text{head}} \text{ bytes}
-$$
+Where $b_{\text{elem}} = 2\text{ bytes}$ in 16-bit precision.
 
 For LLaMA 3.3 70B ($L = 80, n_{kv} = 8, d_{\text{head}} = 128$):
 
@@ -1457,41 +1297,29 @@ $$
 
 #### 5.5.1 Amortizing Memory Bandwidth Across Batch Dimension B
 
-During single-request autoregressive generation ($B = 1$), the GPU must read all $141.1\text{ GB}$ of weights from HBM to produce just **one token**. On an 4x H100 server (aggregate memory bandwidth $\approx 4 \times 3.35\text{ TB/s} = 13.4\text{ TB/s}$), the theoretical generation time is:
+During single-request generation ($B = 1$), loading the entire model from HBM yields an arithmetic intensity of only $1\text{ FLOP/Byte}$.
+
+With batch size $B$, weights are loaded once from HBM and reused across all $B$ requests:
 
 $$
-t_{\text{token}} \ge \frac{141.1\text{ GB}}{13,400\text{ GB/s}} \approx 10.5\text{ ms} \implies \approx 95\text{ tokens/s per stream}
+I(B) = \frac{2 B \Phi}{2 \Phi + \text{KV}_{\text{Cache}}(B)} = \frac{2 B \Phi}{2 \Phi + 4 L n_{kv} d_{\text{head}} S B} \approx B \text{ FLOPs/Byte}
 $$
 
-The arithmetic intensity is dismal:
+#### 5.5.2 Inflection Point: The Knee Batch Size Formula
+
+The transition from memory-bound to compute-bound generation occurs at $B_{\text{knee}}$:
 
 $$
-I(B=1) = \frac{2 \times \Phi}{2 \times \Phi} = 1\text{ FLOP / Byte} \ll I_{\text{knee}} \approx 150\text{ FLOPs / Byte}
+B_{\text{knee}} = \frac{P_{\text{peak}}}{\text{Bandwidth}_{\text{HBM}}} = I_{\text{knee}}
 $$
 
-The Tensor Cores sit $99\%$ idle!
+On an 4x H100 system ($P_{\text{peak}} = 3956\text{ TFLOPs}, \text{Bandwidth} = 13.4\text{ TB/s}$), $B_{\text{knee}} \approx 295$.
 
-**The Power of Batching:** When processing a batch of $B$ requests simultaneously, the model weights are loaded **once** from HBM into on-chip cache and reused across all $B$ tokens:
+#### 5.5.3 Throughput vs. Per-User Latency (TPOT) Trade-Off
 
 $$
-I(B) = \frac{2 \cdot B \cdot \Phi}{2 \cdot \Phi + \text{KV\_Cache}(B)} \approx B \text{ FLOPs / Byte}
+\text{TPOT}(B) = \frac{2 \Phi + \text{KV}(B)}{\min\left( \text{Bandwidth}_{\text{HBM}}, \; \frac{P_{\text{peak}}}{I(B)} \right)}
 $$
-
-```text
-Arithmetic Intensity vs. Batch Size:
-Batch Size B = 1:   Arithmetic Intensity = 1 FLOP/Byte   (Heavily Memory-Bound)
-Batch Size B = 16:  Arithmetic Intensity = 16 FLOPs/Byte (Still Memory-Bound, but 16x throughput!)
-Batch Size B = 128: Arithmetic Intensity = 120 FLOPs/Byte (Approaching Compute-Bound Knee)
-```
-
-Batching amortizes the fixed memory read cost across multiple customers, scaling total throughput almost linearly with $B$ and driving down unit cost.
-
-#### 5.5.2 Throughput vs. Per-User Latency (TPOT) Trade-Off
-
-As batch size $B$ grows, total throughput increases, but per-user latency (**Time Per Output Token - TPOT**) eventually degrades due to:
-1. Extra memory traffic to load the massive KV cache tensors of all $B$ requests.
-2. Tensor Core compute saturation ($I \to I_{\text{knee}}$).
-3. Inter-GPU communication sync barriers across Tensor Parallel ranks.
 
 ```text
 Throughput & Latency Dynamics:
@@ -1507,19 +1335,15 @@ Throughput (Tokens/s)                               Per-User Latency (TPOT ms/to
    [Throughput Scales Linearly with B]                 [Per-User Speed Slows Down at High B]
 ```
 
-#### 5.5.3 Model Bandwidth Utilization (MBU) vs. Model FLOPs Utilization (MFU)
-
-Theoretical throughput is never fully reached in real production servers. **Model Bandwidth Utilization (MBU)** measures how effectively a serving system utilizes the physical memory bandwidth:
+#### 5.5.4 Model Bandwidth Utilization (MBU) vs. Model FLOPs Utilization (MFU)
 
 $$
-\text{MBU} = \frac{\text{Observed Throughput (tok/s)} \times \left( \text{Memory}_{\text{Weights}} + \text{Memory}_{\text{KV}} \right)}{\text{Peak GPU Hardware Bandwidth}}
+\text{MBU} = \frac{\text{Throughput (tok/s)} \times \left( \text{Memory}_{\text{Weights}} + \text{Memory}_{\text{KV}} \right)}{\text{Peak GPU Memory Bandwidth}}
 $$
 
 $$
-\text{MFU} = \frac{\text{Observed Throughput (tok/s)} \times 2 \Phi}{\text{Peak Hardware TFLOPs}}
+\text{MFU} = \frac{\text{Throughput (tok/s)} \times 2 \Phi}{\text{Peak Hardware TFLOPs}}
 $$
-
-In practice, production engines (vLLM, TensorRT-LLM) achieve **$40\% - 65\%$ MBU** due to non-GEMM kernel launch overheads, CUDA stream synchronization stalls, and warp memory bank conflicts.
 
 ---
 
@@ -1527,25 +1351,11 @@ In practice, production engines (vLLM, TensorRT-LLM) achieve **$40\% - 65\%$ MBU
 
 #### 5.6.1 The Memory Fragmentation Crisis
 
-In legacy serving frameworks (e.g., HuggingFace, FasterTransformer), memory for a request's KV cache was allocated as a single, contiguous chunk based on the request's maximum possible output length (`max_seq_len`, e.g., 4096 tokens).
-
-```text
-Legacy Contiguous Pre-Allocation (60% - 80% Memory Wasted):
-Request 1 (Actual Length = 500 tokens):
-┌────────────────────┬─────────────────────────────────────────────────┐
-│ Used: 500 tokens   │ WASTED: 3,596 tokens (Internal Fragmentation)   │
-└────────────────────┴─────────────────────────────────────────────────┘
-Request 2 (Waiting in queue because no contiguous 4,096-token chunk exists!)
-                      (External Fragmentation)
-```
-
-1. **Internal Fragmentation:** Memory reserved for tokens that are never generated (short requests).
-2. **External Fragmentation:** Free memory scattered across non-contiguous fragments, preventing new requests from being scheduled.
-3. **Over-allocation Waste:** $>60-80\%$ of GPU VRAM remained completely idle, capping batch sizes to small values.
+Pre-allocating contiguous memory for `max_seq_len` (e.g., 4096 tokens) wastes $60\% - 80\%$ of VRAM due to internal and external fragmentation.
 
 #### 5.6.2 Block Tables & Virtual Paging Architecture
 
-**PagedAttention** (Kwon et al., SOSP 2023 / vLLM) solves memory fragmentation by adapting the principles of **Operating System Virtual Memory with Paging** to the KV cache:
+PagedAttention partitions KV tensors into fixed-size **Pages** (e.g., $B_{\text{block}} = 16$ tokens) and maps them via a **Block Table**:
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -1568,14 +1378,13 @@ Request 2 (Waiting in queue because no contiguous 4,096-token chunk exists!)
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-1. **Logical vs. Physical Partitioning:** The continuous sequence of KV vectors is split into fixed-size **Logical Blocks** (e.g., $16$ or $32$ tokens).
-2. **Dynamic Page Allocation:** Physical blocks are allocated on-demand from a central pool as tokens are generated. Physical pages do *not* need to be contiguous in memory.
-3. **Block Table Mapping:** The serving engine maintains a lookup table for each request mapping `Logical Block Index -> Physical Page Address`.
-4. **Zero External Fragmentation & Minimal Internal Waste:** Memory is only allocated when a block fills up. Internal fragmentation is strictly bounded to the last partially-filled block ($<4\%$ total memory waste).
+The memory waste fraction is strictly bounded by the last block:
+
+$$
+\text{Memory Waste Fraction} \le \frac{B_{\text{block}} - 1}{2 S} < \mathbf{4\%}
+$$
 
 #### 5.6.3 Copy-on-Write (CoW) Forking & Parallel Sampling
-
-When performing **Parallel Sampling** (e.g., generating $N$ independent candidate completions for a single prompt) or **Beam Search**, multiple output streams share the exact same prompt KV cache pages:
 
 ```text
 Copy-on-Write (CoW) Memory Sharing:
@@ -1591,24 +1400,13 @@ When Branch A generates new token:               │ When Branch B generates new
 Allocates new private [Page 8]!                  │ Allocates new private [Page 9]!
 ```
 
-- **Zero Memory Duplication:** Both branches reference identical prompt pages via reference counting.
-- **Copy-on-Write:** A private physical page is allocated only when a branch writes new, diverging tokens. Reduces memory footprint by up to $55\%$ in multi-candidate generation.
-
 #### 5.6.4 Prefix Caching (Prompt Caching)
 
-In agentic workflows and multi-turn conversations, different user queries frequently share identical prompt prefixes (e.g., system instructions, few-shot examples, RAG documents).
-
-**Prefix Caching** hashes blocks of tokens and stores their computed KV pages in a global LRU cache. When a new request arrives with a matching prefix hash, the engine **skips the prefill compute entirely** and binds the pre-existing KV physical pages directly to the request's Block Table.
-
-$$
-\text{TTFT Reduction: } 80\% - 95\% \quad \text{for cached multi-turn chats and agentic loops.}
-$$
+Hashes prompt token prefixes $\mathcal{H}(t_0, \dots, t_k)$ to index precomputed physical KV pages in an LRU cache, reducing Time To First Token (TTFT) by $80\% - 95\%$.
 
 ---
 
 ### 5.7 Continuous (Iteration-Level) Batching vs. Static Batching
-
-Legacy static batching locks a batch of requests until *every single request* in the batch finishes generating:
 
 ```text
 Static Batching (Tail Latency Bubble):
@@ -1624,20 +1422,19 @@ Step t+1: [Req 4 Prefill] [Req 2 Step] [Req 3 Step] ──► New Req 4 Immediat
 Step t+2: [Req 4 Step]    [Req 2 Step] [Req 3 Step]
 ```
 
-- **Dynamic Request Scheduling:** At every individual decoding step, finished sequences are evicted and returned to the client, while newly queued requests are seamlessly scheduled into the free execution slots.
-- **Throughput Multiplier:** Continuous batching increases GPU utilization by $2\times - 4\times$ compared to static batching.
-
 ---
 
 ## 6. Module V: Novel Transformer Topologies — Per-Layer Embeddings (PLE) in Gemma 4
 
 ### 6.1 Motivation: Decoupling Capacity from FLOPs & Eliminating Identity Dilution
 
-In standard Transformers, input tokens are mapped to continuous vectors *only once* at the input layer ($l = 0$). As activations propagate through deep networks ($L > 32$), two structural pathologies arise:
-1. **Identity Dilution:** Continuous residual summation $h_L = h_0 + \sum_{l=0}^{L-1} f_l(h_l)$ dilutes the original lexical identity of the token.
-2. **Compute-Memory Coupling:** Scaling model capacity (parameters) strictly forces an increase in matrix multiplication FLOPs per token ($O(d_{\text{model}}^2)$).
+In standard Transformers, input tokens are converted to continuous vectors only once at layer $0$:
 
-**Per-Layer Embeddings (PLE)** (introduced in Gemma 4 architectures) decouple total parameter capacity from per-token compute by providing every decoder layer with direct access to dedicated token embedding lookup tables.
+$$
+h_L = h_0 + \sum_{l=0}^{L-1} f_l(h_l)
+$$
+
+As depth increases ($L > 32$), residual accumulation dilutes original lexical identity. **Per-Layer Embeddings (PLE)** decouple parameter capacity from per-token compute by providing dedicated embedding tables at each layer.
 
 ---
 
@@ -1685,69 +1482,49 @@ In standard Transformers, input tokens are mapped to continuous vectors *only on
                           [ Updated State h_(l+1) ]
 ```
 
-#### 6.2.1 Pre-Layer Representation
-For token index $t \in \mathcal{V}$, the architecture extracts two representations:
-1. **Global Base Embedding:** $e_0 \in \mathbb{R}^{d_{\text{base}}}$ from global matrix $E_0 \in \mathbb{R}^{|\mathcal{V}| \times d_{\text{base}}}$.
-2. **Layer-Specific Embedding:** $e_{\text{lookup}}^{(l)} \in \mathbb{R}^{d_{\text{ple}}}$ from layer $l$'s matrix $E_{\text{PLE}}^{(l)} \in \mathbb{R}^{|\mathcal{V}| \times d_{\text{ple}}}$.
+1. **Pre-Layer Representation:**
+   $$
+   p_l = \frac{1}{\sqrt{2}} \left( e_{\text{lookup}}^{(l)} + W_{\text{proj}}^{(l)} e_0 \right) \in \mathbb{R}^{d_{\text{ple}}}
+   $$
 
-$$
-\mathbf{x}_{\text{base}}^{(l)} = W_{\text{proj}}^{(l)} e_0 \in \mathbb{R}^{d_{\text{ple}}}
-$$
-
-$$
-p_l = \frac{1}{\sqrt{2}} \left( e_{\text{lookup}}^{(l)} + \mathbf{x}_{\text{base}}^{(l)} \right) \in \mathbb{R}^{d_{\text{ple}}}
-$$
-
-#### 6.2.2 State-Dependent Gating & Integration
-Inside decoder layer $l$, the contextual hidden state $h_l'' = h_l + \text{Attn}(h_l) + \text{FFN}(h_l')$ modulates the PLE vector $p_l$ via a **State-Dependent Gate** $g_l$:
-
-$$
-g_l = \sigma(W_g h_l'') \in (0, 1)^{d_{\text{ple}}}
-$$
-
-$$
-v_l = g_l \odot p_l \in \mathbb{R}^{d_{\text{ple}}}
-$$
-
-$$
-u_l = W_{\text{out}} v_l \in \mathbb{R}^{d_{\text{model}}}
-$$
-
-$$
-h_{l+1} = h_l'' + \text{RMSNorm}(u_l)
-$$
+2. **State-Dependent Gating & Hadamard Integration:**
+   $$
+   g_l = \sigma(W_g h_l'') \in (0, 1)^{d_{\text{ple}}}
+   $$
+   $$
+   v_l = g_l \odot p_l \in \mathbb{R}^{d_{\text{ple}}}
+   $$
+   $$
+   h_{l+1} = h_l'' + \text{RMSNorm}(W_{\text{out}} v_l)
+   $$
 
 ---
 
 ### 6.3 Deep Dive: Why the Hadamard Product Is Structurally Mandatory
 
-The Hadamard product (element-wise multiplication $[v_l]_i = [g_l]_i \cdot [p_l]_i$) provides three critical capabilities:
+Let $\odot$ denote the Hadamard product ($[u \odot v]_i = u_i \cdot v_i$).
 
-1. **Dimension-Wise Semantic Feature Selection:**
-   Scalar gating ($g \in \mathbb{R}$) forces an all-or-nothing bottleneck. Individual embedding dimensions encode distinct latent factors (e.g., dim 14 = grammatical tense, dim 88 = domain, dim 302 = core entity). The Hadamard product gives the network independent continuous control over every single feature axis.
-2. **Preservation of Latent Disentanglement:**
-   Matrix multiplications ($W p_l$) blend orthogonal basis features across dimensions. The Hadamard product operates strictly along coordinate axes, allowing the gating network to filter noise without rotating the feature coordinate system.
-3. **$O(d_{\text{ple}})$ Computational Complexity:**
-   Performing a matrix multiplication would require $O(d_{\text{model}} \cdot d_{\text{ple}})$ FLOPs. The Hadamard product requires exactly $d_{\text{ple}}$ FLOPs, scaling parameter memory without adding compute overhead.
+1. **Independent Dimension-Wise Control:**
+   $$
+   \frac{\partial v_{l,i}}{\partial p_{l,i}} = g_{l,i} \in (0, 1)
+   $$
+   Scalar gating forces uniform attenuation across all channels, whereas the Hadamard product gives the network independent control over every semantic feature axis.
+
+2. **Preservation of Coordinate Basis Disentanglement:**
+   Unlike dense matrix projection $W p_l$ which rotates coordinate axes, the Hadamard product scales orthogonal features along their intrinsic axes without feature cross-contamination.
+
+3. **Computational Efficiency:**
+   Requires exactly **$d_{\text{ple}}$ FLOPs** instead of $O(d_{\text{model}} \cdot d_{\text{ple}})$ matrix multiply FLOPs.
 
 ---
 
 ### 6.4 Information Retention & Semantic Disambiguation Dynamics
 
-PLE balances new token lookups with historical context through state-conditioned gate saturation:
-
 ```text
-Case Study: Disambiguating "The river bank overflowed"
-
-Layer 2 (Syntax & Morphology):
-  h_2'' is unresolved. Gate g_2 -> 1.0 (OPENS).
-  Injects p_2 containing lexical syntax embeddings for "bank".
-
-Layer 24 (Deep Contextual Reasoning):
-  Attention has resolved "river" + "bank" -> [Geographical Shoreline].
-  h_24'' is highly certain. Gate g_24 -> 0.0 (CLOSES).
-  Suppresses p_24 lookup to prevent static dictionary definitions (e.g., financial bank)
-  from corrupting the established semantic representation!
+Case Study: "The river bank overflowed"
+- Layer 2 (Morphology/Syntax): Gate g_2 -> 1.0 (OPENS) to inject raw lexical tokens.
+- Layer 24 (Deep Contextual Reasoning): Context has resolved "river bank" = [Shoreline].
+  Gate g_24 -> 0.0 (CLOSES) to prevent static financial word embeddings from corrupting the contextual state!
 ```
 
 ---
@@ -1756,11 +1533,11 @@ Layer 24 (Deep Contextual Reasoning):
 
 | Dimension | Standard Transformer | Gemma 4 with Per-Layer Embeddings (PLE) |
 | :--- | :--- | :--- |
-| **Token Representation Ingestion** | Single lookup at input layer $l=0$ | Dynamic re-injection at every layer $l \in \{1, \dots, L\}$ |
-| **Parameter vs. FLOP Scaling** | Strictly coupled ($\text{Params} \propto \text{FLOPs}$) | Decoupled ($\text{Capacity} \gg \text{Active Compute FLOPs}$) |
-| **Deep Network Identity Retention** | Degrades as $L > 32$ due to residual dilution | Zero-FLOP identity re-anchoring at arbitrary depth |
-| **Residual Structure** | Dual-Branch: $\text{Residual} + \text{Attn} + \text{FFN}$ | Triple-Branch: $\text{Residual} + \text{Attn} + \text{FFN} + \text{Gated PLE}$ |
-| **Layer-Specific Specialization** | Universal embedding shared globally | Early layers learn syntax; deep layers learn abstract semantics |
+| **Embedding Lookup** | Single lookup at layer $l = 0$ | Dynamic re-injection at every layer $l \in \{1, \dots, L\}$ |
+| **Parameter vs. Compute Scaling** | Coupled ($\text{Params} \propto \text{FLOPs}$) | Decoupled ($\text{Capacity} \gg \text{Compute FLOPs}$) |
+| **Deep Token Representation** | Diluted over deep layers | Retained cleanly across arbitrary depth |
+| **Residual Structure** | Dual-Branch ($\text{Residual} + \text{Attn} + \text{FFN}$) | Triple-Branch ($\text{Residual} + \text{Attn} + \text{FFN} + \text{Gated PLE}$) |
+| **Layer Specialization** | Universal static embedding | Early layers learn syntax; deep layers learn abstract semantics |
 
 ---
 
@@ -1825,16 +1602,16 @@ Target Deployment Constraints:
 
 ### 7.3 Comprehensive Glossary of Symbols & Notation
 
-| Symbol | Mathematical Definition | Domain / Architectural Role |
+| Symbol | Mathematical Definition | Domain / Systems Role |
 | :--- | :--- | :--- |
-| $\mathbf{A}$ | State transition matrix in SSM ($\mathbb{R}^{N \times N}$) | Defines continuous-time internal state dynamics |
-| $\mathbf{\bar{A}}, \mathbf{\bar{B}}$ | Discretized SSM state matrices | Computed via Zero-Order Hold (ZOH) with step size $\Delta$ |
-| $\Delta$ | Discretization step size ($\mathbb{R}^+$) | Timescale resolution; in Mamba, acts as input-dependent gate |
+| $\mathbf{A}$ | Continuous state transition matrix ($\mathbb{R}^{N \times N}$) | Defines continuous-time internal memory dynamics in SSMs |
+| $\mathbf{\bar{A}}, \mathbf{\bar{B}}$ | Discretized state matrices | Discretized via Zero-Order Hold (ZOH) with step $\Delta$ |
+| $\Delta$ | Step size parameter ($\mathbb{R}^+$) | Timescale resolution; acts as input-dependent gate in Mamba |
 | $\mathbf{\bar{K}}$ | SSM convolution kernel ($\mathbb{R}^L$) | Enables FFT-based parallel sequence training in LTI SSMs |
 | $s$ | Quantization scale factor ($\mathbb{R}^+$) | Maps continuous interval to discrete integer grid |
 | $z$ | Integer zero-point ($\mathbb{Z}$) | Offsets asymmetric quantized values |
 | $H^{-1}$ | Inverse Hessian matrix ($2 X X^T + \lambda I)^{-1}$ | Second-order sensitivity matrix in GPTQ error redistribution |
-| $\Phi$ | Total model parameter count | Base unit for distributed memory calculations |
+| $\Phi$ | Total model parameter count | Base unit for distributed memory and compute calculations |
 | $p$ | Pipeline stages (GPUs in pipeline) | Determines pipeline bubble fraction $\frac{p-1}{p-1+m}$ |
 | $m$ | Micro-batch count | Subdivisions of mini-batch for gradient accumulation |
 | $e_0$ | Global base embedding ($\mathbb{R}^{d_{\text{base}}}$) | Universal token lookup vector in PLE |
@@ -1847,3 +1624,33 @@ Target Deployment Constraints:
 | $\text{MBU}$ | Model Bandwidth Utilization ($\%$) | Fraction of hardware theoretical memory bandwidth achieved |
 | $\text{MFU}$ | Model FLOPs Utilization ($\%$) | Fraction of hardware peak theoretical compute achieved |
 | $B_{\text{block}}$ | PagedAttention block size (tokens) | Unit of physical memory allocation in virtual KV paging |
+
+---
+
+### 7.4 References & Primary Sources
+
+This technical compendium synthesizes theoretical principles, systems implementations, and architectural benchmarks from the following primary publications and engineering references:
+
+1. **Model Quantization & Precision:**
+   - Maarten Grootendorst. *"A Visual Guide to Quantization."* [Towards Data Science](https://medium.com/data-science/a-visual-guide-to-quantization-930ebcd9be94).
+   - Elias Frantar, Saleh Ashkboos, Torsten Hoefler, Dan Alistarh. *"GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers."* [arXiv:2210.17323](https://arxiv.org/abs/2210.17323).
+   - Shuming Ma, Hongyu Wang, Lingxiao Ma, Lei Wang, Wenhui Wang, Saksham Bhatia, Jiayu Ding, Jilong Xue, Furu Wei. *"The Era of 1-bit LLMs: All Large Language Models are in 1.58 Bits."* [arXiv:2402.17764](https://arxiv.org/abs/2402.17764).
+
+2. **State Space Models & Mamba Architectures:**
+   - Maarten Grootendorst. *"A Visual Guide to Mamba and State Space Models."* [Towards Data Science](https://medium.com/data-science/a-visual-guide-to-mamba-and-state-space-models-8d0d3f7d3ea6).
+   - Albert Gu, Tri Dao. *"Mamba: Linear-Time Sequence Modeling with Selective State Spaces."* [arXiv:2312.00752](https://arxiv.org/abs/2312.00752).
+   - Albert Gu, Karan Goel, Christopher Ré. *"Efficiently Modeling Long Sequences with Structured State Spaces (S4)."* [ICLR 2022 / arXiv:2111.00396](https://arxiv.org/abs/2111.00396).
+
+3. **Distributed Systems Parallelism & Hardware Tiling:**
+   - Internal Repository: [parallelism_examples.md](file:///home/backup-279/ML_Basics/parallelism_examples.md) (*Data Parallelism, Megatron-LM Tensor Parallelism, Pipeline Bubbles, Ring Attention Online Softmax, ZeRO-1/2/3, FlashAttention*).
+   - Mohammad Shoeybi, Mostofa Patwary, Raul Puri, Patrick LeGresley, Jared Casper, Bryan Catanzaro. *"Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism."* [arXiv:1909.08053](https://arxiv.org/abs/1909.08053).
+   - Samyam Rajbhandari, Jeff Rasley, Olatunji Ruwase, Yuxiong He. *"ZeRO: Memory Optimizations Toward Training Trillion Parameter Models."* [SC20 / arXiv:1910.02054](https://arxiv.org/abs/1910.02054).
+   - Tri Dao, Daniel Y. Fu, Stefano Ermon, Atri Rudra, Christopher Ré. *"FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness."* [NeurIPS 2022 / arXiv:2205.14135](https://arxiv.org/abs/2205.14135).
+
+4. **Inference Economics, KV Caching & PagedAttention:**
+   - Tensor Economics. *"LLM Inference Economics from First Principles."* [Tensor Economics Newsletter](https://www.tensoreconomics.com/p/llm-inference-economics-from-first).
+   - Musings with LLMs. *"Understanding KV Cache and PagedAttention in LLMs: A Deep Dive into Efficient Inference."* [Medium](https://medium.com/my-musings-with-llms/understanding-kv-cache-and-paged-attention-in-llms-a-deep-dive-into-efficient-inference-62fa372432ce).
+   - Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph E. Gonzalez, Haotong Zhang, Ion Stoica. *"Efficient Memory Management for Large Language Model Serving with PagedAttention (vLLM)."* [SOSP 2023 / arXiv:2309.06180](https://arxiv.org/abs/2309.06180).
+
+5. **Novel Transformer Topologies & Deep Representations:**
+   - Internal Repository: [per_layer_embeddings_gemma4.md](file:///home/backup-279/ML_Basics/per_layer_embeddings_gemma4.md) (*Mathematical formulation, state-dependent gating dynamics, and Hadamard feature filtering in Gemma 4 Per-Layer Embeddings*).
