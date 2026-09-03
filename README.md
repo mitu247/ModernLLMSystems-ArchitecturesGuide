@@ -1935,7 +1935,7 @@ $$
 p_\theta(\mathbf{x}) = \int p_\theta(\mathbf{x} | \mathbf{z}) \, p(\mathbf{z}) \, d\mathbf{z}
 $$
 
-This integral is **intractable** for complex decoder networks $p_\theta(\mathbf{x} | \mathbf{z})$ because it requires marginalizing over the entire latent space.
+This integral is **intractable** for complex decoder networks $p\_\theta(\mathbf{x} | \mathbf{z})$ because it requires marginalizing over the entire latent space.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -1960,7 +1960,7 @@ This integral is **intractable** for complex decoder networks $p_\theta(\mathbf{
 
 #### 8.2.1 The Evidence Lower Bound (ELBO) Derivation
 
-Since $p_\theta(\mathbf{x})$ is intractable, we introduce an approximate posterior $q_\phi(\mathbf{z} | \mathbf{x})$ and derive a tractable lower bound on the log-evidence.
+Since $p\_\theta(\mathbf{x})$ is intractable, we introduce an approximate posterior $q\_\phi(\mathbf{z} | \mathbf{x})$ and derive a tractable lower bound on the log-evidence.
 
 Starting from the log-marginal likelihood:
 
@@ -1980,7 +1980,7 @@ $$
 \log p_\theta(\mathbf{x}) \geq \mathbb{E}_{q_\phi(\mathbf{z} | \mathbf{x})} \left[ \log \frac{p_\theta(\mathbf{x}, \mathbf{z})}{q_\phi(\mathbf{z} | \mathbf{x})} \right] = \mathcal{L}(\theta, \phi; \mathbf{x})
 $$
 
-Decomposing the joint probability $p_\theta(\mathbf{x}, \mathbf{z}) = p_\theta(\mathbf{x} | \mathbf{z}) p(\mathbf{z})$:
+Decomposing the joint probability $p\_\theta(\mathbf{x}, \mathbf{z}) = p\_\theta(\mathbf{x} | \mathbf{z}) p(\mathbf{z})$:
 
 $$
 \mathcal{L}(\theta, \phi; \mathbf{x}) = \underbrace{\mathbb{E}_{q_\phi(\mathbf{z} | \mathbf{x})} \left[ \log p_\theta(\mathbf{x} | \mathbf{z}) \right]}_{\text{Reconstruction Term}} - \underbrace{D_{\text{KL}}\left( q_\phi(\mathbf{z} | \mathbf{x}) \| p(\mathbf{z}) \right)}_{\text{Regularization Term}}
@@ -1992,7 +1992,7 @@ $$
 \log p_\theta(\mathbf{x}) = \mathcal{L}(\theta, \phi; \mathbf{x}) + D_{\text{KL}}\left( q_\phi(\mathbf{z} | \mathbf{x}) \| p_\theta(\mathbf{z} | \mathbf{x}) \right)
 $$
 
-Since $D_{\text{KL}} \geq 0$, maximizing the ELBO simultaneously maximizes the data likelihood and minimizes the approximation gap.
+Since $D\_{\text{KL}} \geq 0$, maximizing the ELBO simultaneously maximizes the data likelihood and minimizes the approximation gap.
 
 #### 8.2.2 Expectation-Maximization (EM) Algorithm
 
@@ -2029,7 +2029,7 @@ $$
 
 ### 8.3 Variational Autoencoders (VAEs)
 
-The Variational Autoencoder (Kingma & Welling, 2014) operationalizes the latent variable framework by parameterizing both the approximate posterior $q_\phi(\mathbf{z} | \mathbf{x})$ (encoder) and the likelihood $p_\theta(\mathbf{x} | \mathbf{z})$ (decoder) as deep neural networks.
+The Variational Autoencoder (Kingma & Welling, 2014) operationalizes the latent variable framework by parameterizing both the approximate posterior $q\_\phi(\mathbf{z} | \mathbf{x})$ (encoder) and the likelihood $p\_\theta(\mathbf{x} | \mathbf{z})$ (decoder) as deep neural networks.
 
 #### 8.3.1 Encoder-Decoder Architecture & Amortized Inference
 
@@ -2114,15 +2114,15 @@ $$
 
 **Mitigation strategies:**
 
-- **KL Annealing (Warm-Up):** Linearly anneal the weight of the KL term from 0 to 1 during early training epochs using $\beta$-weighting: $\mathcal{L} = -\mathbb{E}[\log p_\theta(\mathbf{x} | \mathbf{z})] + \beta \cdot D_{\text{KL}}$
-- **Free Bits:** Enforce a minimum information rate per latent dimension: $D_{\text{KL}}^{(j)} \geq \lambda$ for each dimension $j$
+- **KL Annealing (Warm-Up):** Linearly anneal the weight of the KL term from 0 to 1 during early training epochs using $\beta$-weighting: $\mathcal{L} = -\mathbb{E}[\log p\_\theta(\mathbf{x} | \mathbf{z})] + \beta \cdot D\_{\text{KL}}$
+- **Free Bits:** Enforce a minimum information rate per latent dimension: $D\_{\text{KL}}^{(j)} \geq \lambda$ for each dimension $j$
 - **$\boldsymbol\beta$-VAE:** Use $\beta > 1$ to encourage disentangled latent representations at the cost of reconstruction quality
 
 ---
 
 ### 8.4 Generative Adversarial Networks (GANs)
 
-GANs (Goodfellow et al., 2014) bypass explicit density estimation entirely by framing generation as a two-player adversarial game between a **Generator** $G_\theta$ and a **Discriminator** $D_\phi$.
+GANs (Goodfellow et al., 2014) bypass explicit density estimation entirely by framing generation as a two-player adversarial game between a **Generator** $G\_\theta$ and a **Discriminator** $D\_\phi$.
 
 #### 8.4.1 The Minimax Game Formulation
 
@@ -2168,12 +2168,12 @@ $$
 V(G, D^*_G) = -\log 4 + 2 \cdot D_{\text{JS}}\left( p_{\text{data}} \| p_G \right)
 $$
 
-where $D_{\text{JS}}$ is the **Jensen-Shannon divergence**. The minimum is achieved when $p_G = p_{\text{data}}$, yielding $V = -\log 4$ and $D^*(\mathbf{x}) = \frac{1}{2}$ everywhere.
+where $D\_{\text{JS}}$ is the **Jensen-Shannon divergence**. The minimum is achieved when $p\_G = p\_{\text{data}}$, yielding $V = -\log 4$ and $D^*(\mathbf{x}) = \frac{1}{2}$ everywhere.
 
 **Alternating Gradient Updates:**
 
-1. **Discriminator step:** $\phi \leftarrow \phi + \eta \nabla_\phi V(D_\phi, G_\theta)$
-2. **Generator step:** $\theta \leftarrow \theta - \eta \nabla_\theta V(D_\phi, G_\theta)$
+1. **Discriminator step:** $\phi \leftarrow \phi + \eta \nabla\_\phi V(D\_\phi, G\_\theta)$
+2. **Generator step:** $\theta \leftarrow \theta - \eta \nabla\_\theta V(D\_\phi, G\_\theta)$
 
 In practice, the generator maximizes $\mathbb{E}[\log D(G(\mathbf{z}))]$ (non-saturating loss) instead of minimizing $\mathbb{E}[\log(1 - D(G(\mathbf{z})))]$ to avoid vanishing gradients when $D$ is near-optimal.
 
@@ -2181,7 +2181,7 @@ In practice, the generator maximizes $\mathbb{E}[\log D(G(\mathbf{z}))]$ (non-sa
 
 **Mode collapse** occurs when the generator produces limited diversity, mapping multiple latent codes to the same output mode while ignoring large regions of the true data distribution.
 
-**Root cause:** The JS divergence becomes uninformative (constant) when $p_{\text{data}}$ and $p_G$ have disjoint supports, which commonly occurs in high-dimensional spaces.
+**Root cause:** The JS divergence becomes uninformative (constant) when $p\_{\text{data}}$ and $p\_G$ have disjoint supports, which commonly occurs in high-dimensional spaces.
 
 **WGAN (Arjovsky et al., 2017)** replaces the JS divergence with the **Earth Mover's Distance (Wasserstein-1 distance)**:
 
@@ -2323,7 +2323,7 @@ $$
 
 #### 8.6.2 The Reverse Denoising Process
 
-The **reverse process** $p_\theta$ learns to denoise, transforming noise back into data. Each reverse step is parameterized as a Gaussian:
+The **reverse process** $p\_\theta$ learns to denoise, transforming noise back into data. Each reverse step is parameterized as a Gaussian:
 
 $$
 p_\theta(\mathbf{x}_{t-1} | \mathbf{x}_t) = \mathcal{N}\left(\mathbf{x}_{t-1}; \boldsymbol{\mu}_\theta(\mathbf{x}_t, t), \sigma_t^2 \mathbf{I}\right)
@@ -2371,7 +2371,7 @@ $$
 
 #### 8.6.3 Training Objective: Simplified Denoising Loss
 
-The variational bound on the negative log-likelihood decomposes into a sum of KL divergences between forward and reverse Gaussians at each timestep. Ho et al. (2020) showed that a **simplified objective** — training a neural network $\boldsymbol{\epsilon}_\theta$ to predict the noise $\boldsymbol{\epsilon}$ added at each step — yields superior sample quality:
+The variational bound on the negative log-likelihood decomposes into a sum of KL divergences between forward and reverse Gaussians at each timestep. Ho et al. (2020) showed that a **simplified objective** — training a neural network $\boldsymbol{\epsilon}\_\theta$ to predict the noise $\boldsymbol{\epsilon}$ added at each step — yields superior sample quality:
 
 $$
 \mathcal{L}_{\text{simple}} = \mathbb{E}_{t \sim \mathcal{U}(1,T), \, \mathbf{x}_0 \sim q(\mathbf{x}_0), \, \boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})} \left[ \| \boldsymbol{\epsilon} - \boldsymbol{\epsilon}_\theta(\mathbf{x}_t, t) \|^2 \right]
@@ -2455,17 +2455,29 @@ $$
 
 The score function points in the direction of increasing data density, providing a gradient field that can guide samples toward high-probability regions without computing the normalizing constant $Z$.
 
-**Denoising Score Matching:** A neural network $\mathbf{s}_\theta(\mathbf{x}, \sigma)$ is trained to estimate the score of noise-perturbed data distributions $p_\sigma(\mathbf{x}) = \int p_{\text{data}}(\mathbf{x}') \mathcal{N}(\mathbf{x}; \mathbf{x}', \sigma^2 \mathbf{I}) d\mathbf{x}'$:
+**Denoising Score Matching:** A neural network $\mathbf{s}\_\theta(\mathbf{x}, \sigma)$ is trained to estimate the score of noise-perturbed data distributions:
 
 $$
-\mathcal{L}_{\text{DSM}} = \mathbb{E}_{\sigma \sim p(\sigma)} \left[ \lambda(\sigma) \, \mathbb{E}_{\mathbf{x}_0} \, \mathbb{E}_{\mathbf{x} | \mathbf{x}_0} \left[ \left\| \mathbf{s}_\theta(\mathbf{x}, \sigma) - \nabla_{\mathbf{x}} \log q_\sigma(\mathbf{x} | \mathbf{x}_0) \right\|_2^2 \right] \right]
+p\_\sigma(\mathbf{x}) = \int p\_{\text{data}}(\mathbf{x}') \, \mathcal{N}(\mathbf{x};\, \mathbf{x}', \sigma^2 \mathbf{I}) \, d\mathbf{x}'
 $$
 
-For Gaussian perturbation, $\nabla_{\mathbf{x}} \log q_\sigma(\mathbf{x} | \mathbf{x}_0) = -\frac{\mathbf{x} - \mathbf{x}_0}{\sigma^2} = -\frac{\boldsymbol{\epsilon}}{\sigma}$, directly connecting score matching to the DDPM noise-prediction objective.
+The denoising score matching objective is:
+
+$$
+\mathcal{L}\_{\text{DSM}} = \mathbb{E}\_{\sigma \sim p(\sigma)} \left[ \lambda(\sigma) \, \mathbb{E}\_{\mathbf{x}\_0} \, \mathbb{E}\_{\mathbf{x} | \mathbf{x}\_0} \left[ \left\| \mathbf{s}\_\theta(\mathbf{x}, \sigma) - \nabla\_{\mathbf{x}} \log q\_\sigma(\mathbf{x} | \mathbf{x}\_0) \right\|\_2^2 \right] \right]
+$$
+
+For Gaussian perturbation:
+
+$$
+\nabla\_{\mathbf{x}} \log q\_\sigma(\mathbf{x} | \mathbf{x}\_0) = -\frac{\mathbf{x} - \mathbf{x}\_0}{\sigma^2} = -\frac{\boldsymbol{\epsilon}}{\sigma}
+$$
+
+This directly connects score matching to the DDPM noise-prediction objective.
 
 #### 8.7.2 Langevin Dynamics Sampling
 
-Given a learned score function $\mathbf{s}_\theta(\mathbf{x})$, samples can be generated via **Langevin Monte Carlo** dynamics:
+Given a learned score function $\mathbf{s}\_\theta(\mathbf{x})$, samples can be generated via **Langevin Monte Carlo** dynamics:
 
 $$
 \mathbf{x}_{i+1} = \mathbf{x}_i + \frac{\eta}{2} \nabla_{\mathbf{x}} \log p(\mathbf{x}_i) + \sqrt{\eta} \, \mathbf{z}_i, \qquad \mathbf{z}_i \sim \mathcal{N}(\mathbf{0}, \mathbf{I})
@@ -2559,7 +2571,7 @@ The autoencoder is trained with a combination of perceptual loss (LPIPS), patch-
 
 #### 8.8.2 Cross-Attention Conditioning (Text-to-Image)
 
-Text conditioning is injected into the U-Net denoiser via **cross-attention** layers. Given a text prompt, a pretrained language model (e.g., CLIP text encoder or T5) produces a sequence of token embeddings $\boldsymbol{\tau}_\theta(\mathbf{y}) \in \mathbb{R}^{M \times d_\tau}$.
+Text conditioning is injected into the U-Net denoiser via **cross-attention** layers. Given a text prompt, a pretrained language model (e.g., CLIP text encoder or T5) produces a sequence of token embeddings $\boldsymbol{\tau}\_\theta(\mathbf{y}) \in \mathbb{R}^{M \times d\_\tau}$.
 
 At each spatial location in the U-Net, cross-attention is computed as:
 
