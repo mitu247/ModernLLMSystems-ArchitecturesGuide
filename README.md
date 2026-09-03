@@ -2568,9 +2568,18 @@ $$
 $$
 
 where:
-- $\mathbf{Q} = \mathbf{W}_Q^{(i)} \cdot \varphi_i(\mathbf{z}_t)$ — Query from the U-Net intermediate representation
-- $\mathbf{K} = \mathbf{W}_K^{(i)} \cdot \boldsymbol{\tau}_\theta(\mathbf{y})$ — Key from the text encoder output
-- $\mathbf{V} = \mathbf{W}_V^{(i)} \cdot \boldsymbol{\tau}_\theta(\mathbf{y})$ — Value from the text encoder output
+
+$$\mathbf{Q} = \mathbf{W}_Q^{(i)} \cdot \varphi_i(\mathbf{z}_t)$$
+
+Query projection from the U-Net intermediate representation at layer $i$.
+
+$$\mathbf{K} = \mathbf{W}_K^{(i)} \cdot \boldsymbol{\tau}_\theta(\mathbf{y})$$
+
+Key projection from the text encoder output embedding sequence.
+
+$$\mathbf{V} = \mathbf{W}_V^{(i)} \cdot \boldsymbol{\tau}_\theta(\mathbf{y})$$
+
+Value projection from the text encoder output embedding sequence.
 
 #### 8.8.3 Classifier-Free Guidance
 
