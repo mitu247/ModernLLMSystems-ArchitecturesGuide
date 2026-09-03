@@ -1,6 +1,6 @@
 # Modern Large Language Model Architectures & Distributed Systems: The Complete Technical Compendium
 
-**A Deep Mathematical, Systems-Level, and Architectural Synthesis of Quantization, State Space Models (Mamba), Distributed Parallelism (3D/4D & ZeRO), Inference Economics & PagedAttention, Rotary Position Embeddings (RoPE), and the Gemma 4 Frontier Architecture Suite**
+**A Deep Mathematical, Systems-Level, and Architectural Synthesis of Quantization, State Space Models (Mamba), Distributed Parallelism (3D/4D & ZeRO), Inference Economics & PagedAttention, Rotary Position Embeddings (RoPE), the Gemma 4 Frontier Architecture Suite, and Generative Models (Latent Variable Models, VAEs & Diffusion Models)**
 
 ---
 
@@ -105,11 +105,42 @@
     - [7.5.3 Why the Hadamard Product Is Structurally Mandatory](#753-why-the-hadamard-product-is-structurally-mandatory)
     - [7.5.4 Information Retention & Semantic Disambiguation Dynamics](#754-information-retention--semantic-disambiguation-dynamics)
   - [7.6 Multi-Token Prediction (MTP) Speculative Drafters](#76-multi-token-prediction-mtp-speculative-drafters)
-- [8. Module VII: Cross-Disciplinary Synthesis & Engineering Playbook](#8-module-vii-cross-disciplinary-synthesis--engineering-playbook)
-  - [8.1 Full Model Lifecycle Workflow](#81-full-model-lifecycle-workflow)
-  - [8.2 Systems Engineering Decision Flowchart](#82-systems-engineering-decision-flowchart)
-  - [8.3 Comprehensive Glossary of Symbols & Notation](#83-comprehensive-glossary-of-symbols--notation)
-  - [8.4 References & Primary Sources](#84-references--primary-sources)
+- [8. Module VIII: Generative Models — Latent Variable Models & Diffusion Models](#8-module-viii-generative-models--latent-variable-models--diffusion-models)
+  - [8.1 The Generative Modeling Landscape & Taxonomy](#81-the-generative-modeling-landscape--taxonomy)
+  - [8.2 Latent Variable Models: Core Mathematical Framework](#82-latent-variable-models-core-mathematical-framework)
+    - [8.2.1 The Evidence Lower Bound (ELBO) Derivation](#821-the-evidence-lower-bound-elbo-derivation)
+    - [8.2.2 Expectation-Maximization (EM) Algorithm](#822-expectation-maximization-em-algorithm)
+  - [8.3 Variational Autoencoders (VAEs)](#83-variational-autoencoders-vaes)
+    - [8.3.1 Encoder-Decoder Architecture & Amortized Inference](#831-encoder-decoder-architecture--amortized-inference)
+    - [8.3.2 The Reparameterization Trick](#832-the-reparameterization-trick)
+    - [8.3.3 VAE Loss Function: Reconstruction + KL Divergence](#833-vae-loss-function-reconstruction--kl-divergence)
+    - [8.3.4 Posterior Collapse & Mitigation Strategies](#834-posterior-collapse--mitigation-strategies)
+  - [8.4 Generative Adversarial Networks (GANs)](#84-generative-adversarial-networks-gans)
+    - [8.4.1 The Minimax Game Formulation](#841-the-minimax-game-formulation)
+    - [8.4.2 Training Dynamics & Nash Equilibrium](#842-training-dynamics--nash-equilibrium)
+    - [8.4.3 Mode Collapse & Wasserstein Distance (WGAN)](#843-mode-collapse--wasserstein-distance-wgan)
+  - [8.5 Normalizing Flows](#85-normalizing-flows)
+    - [8.5.1 Change of Variables Formula & Jacobian Determinant](#851-change-of-variables-formula--jacobian-determinant)
+    - [8.5.2 Architectural Constraints: Planar, Radial & Autoregressive Flows](#852-architectural-constraints-planar-radial--autoregressive-flows)
+  - [8.6 Diffusion Models: Denoising Diffusion Probabilistic Models (DDPMs)](#86-diffusion-models-denoising-diffusion-probabilistic-models-ddpms)
+    - [8.6.1 The Forward Diffusion Process (Noise Schedule)](#861-the-forward-diffusion-process-noise-schedule)
+    - [8.6.2 The Reverse Denoising Process](#862-the-reverse-denoising-process)
+    - [8.6.3 Training Objective: Simplified Denoising Loss](#863-training-objective-simplified-denoising-loss)
+    - [8.6.4 The Noise Schedule: Linear vs. Cosine](#864-the-noise-schedule-linear-vs-cosine)
+  - [8.7 Score-Based Generative Models & Stochastic Differential Equations (SDEs)](#87-score-based-generative-models--stochastic-differential-equations-sdes)
+    - [8.7.1 Score Function & Score Matching](#871-score-function--score-matching)
+    - [8.7.2 Langevin Dynamics Sampling](#872-langevin-dynamics-sampling)
+    - [8.7.3 Continuous-Time SDE Formulation (Song et al.)](#873-continuous-time-sde-formulation-song-et-al)
+  - [8.8 Latent Diffusion Models (LDMs) & Stable Diffusion Architecture](#88-latent-diffusion-models-ldms--stable-diffusion-architecture)
+    - [8.8.1 Perceptual Compression via Pretrained Autoencoders](#881-perceptual-compression-via-pretrained-autoencoders)
+    - [8.8.2 Cross-Attention Conditioning (Text-to-Image)](#882-cross-attention-conditioning-text-to-image)
+    - [8.8.3 Classifier-Free Guidance](#883-classifier-free-guidance)
+  - [8.9 Generative Models Comparison Matrix](#89-generative-models-comparison-matrix)
+- [9. Module IX: Cross-Disciplinary Synthesis & Engineering Playbook](#9-module-ix-cross-disciplinary-synthesis--engineering-playbook)
+  - [9.1 Full Model Lifecycle Workflow](#91-full-model-lifecycle-workflow)
+  - [9.2 Systems Engineering Decision Flowchart](#92-systems-engineering-decision-flowchart)
+  - [9.3 Comprehensive Glossary of Symbols & Notation](#93-comprehensive-glossary-of-symbols--notation)
+  - [9.4 References & Primary Sources](#94-references--primary-sources)
 
 ---
 
@@ -1851,9 +1882,754 @@ Gemma 4 models integrate native **Multi-Token Prediction (MTP)** drafter modules
 
 ---
 
-## 8. Module VII: Cross-Disciplinary Synthesis & Engineering Playbook
+## 8. Module VIII: Generative Models — Latent Variable Models & Diffusion Models
 
-### 8.1 Full Model Lifecycle Workflow
+Generative models learn the underlying data distribution $p(\mathbf{x})$ over observed data $\mathbf{x}$, enabling the synthesis of novel, realistic samples. This module provides a unified mathematical treatment of the four principal generative model families — Latent Variable Models (VAEs), Generative Adversarial Networks (GANs), Normalizing Flows, and Diffusion Models (DDPMs / Score-Based SDEs) — culminating in the Latent Diffusion Model (LDM) architecture powering modern text-to-image systems such as Stable Diffusion.
+
+### 8.1 The Generative Modeling Landscape & Taxonomy
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    GENERATIVE MODEL TAXONOMY                               │
+│                                                                             │
+│                        Generative Models                                    │
+│                              │                                              │
+│          ┌──────────┬────────┴─────────┬──────────────┐                     │
+│          │          │                  │              │                     │
+│    ┌─────▼─────┐ ┌──▼───────────┐ ┌───▼──────┐ ┌───▼──────────────┐       │
+│    │   GANs    │ │ Latent Var.  │ │ Normal.  │ │ Diffusion Models │       │
+│    │           │ │ Models (VAEs)│ │ Flows    │ │ (DDPMs / SDEs)   │       │
+│    └─────┬─────┘ └──┬───────────┘ └───┬──────┘ └───┬──────────────┘       │
+│          │          │                  │              │                     │
+│   Implicit     Approximate         Exact          Iterative                │
+│   Density      Posterior         Likelihood       Denoising                │
+│   (No p(x))    (ELBO)           (Change of Var)  (Markov Chain)            │
+│                                                                             │
+│  Training:     Training:          Training:       Training:                 │
+│  Adversarial   Maximize ELBO      Maximize        Predict noise             │
+│  Min-Max Game  = Recon - KL       log p(x)        ε_θ(x_t, t)             │
+│                                   exactly                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+| Model Family | Density Estimation | Training Objective | Sample Quality | Training Stability | Likelihood Computation |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **VAE** | Approximate (ELBO lower bound) | Maximize ELBO | Moderate (blurry) | Stable | Lower bound via ELBO |
+| **GAN** | Implicit (no explicit density) | Minimax adversarial game | High (sharp) | Unstable (mode collapse) | Not available |
+| **Normalizing Flow** | Exact (change of variables) | Maximize exact log-likelihood | Moderate | Stable | Exact computation |
+| **Diffusion Model (DDPM)** | Approximate (variational bound) | Denoising score matching | State-of-the-art | Very stable | Lower bound (tractable) |
+
+---
+
+### 8.2 Latent Variable Models: Core Mathematical Framework
+
+Latent variable models posit that observed data $\mathbf{x}$ is generated from unobserved (latent) variables $\mathbf{z}$ via a generative process:
+
+$$
+\mathbf{z} \sim p(\mathbf{z}), \qquad \mathbf{x} \sim p_\theta(\mathbf{x} | \mathbf{z})
+$$
+
+The marginal likelihood (evidence) integrates over all possible latent configurations:
+
+$$
+p_\theta(\mathbf{x}) = \int p_\theta(\mathbf{x} | \mathbf{z}) \, p(\mathbf{z}) \, d\mathbf{z}
+$$
+
+This integral is **intractable** for complex decoder networks $p_\theta(\mathbf{x} | \mathbf{z})$ because it requires marginalizing over the entire latent space.
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│               LATENT VARIABLE MODEL GENERATIVE PROCESS                      │
+│                                                                             │
+│   Prior:  z ~ p(z) = N(0, I)                                               │
+│                │                                                            │
+│                ▼                                                            │
+│   Decoder: p_θ(x|z)  ──────►  x ~ p_θ(x|z)                                │
+│   (Neural Network)              (Generated Sample)                          │
+│                                                                             │
+│   Inference Problem:                                                        │
+│   Given observed x, what is p(z|x)?                                         │
+│                                                                             │
+│              p_θ(x|z) p(z)                                                  │
+│   p(z|x) = ──────────────── ← Requires intractable ∫ p_θ(x|z)p(z) dz      │
+│                p_θ(x)                                                       │
+│                                                                             │
+│   Solution: Approximate p(z|x) with q_φ(z|x) (Variational Inference)       │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 8.2.1 The Evidence Lower Bound (ELBO) Derivation
+
+Since $p_\theta(\mathbf{x})$ is intractable, we introduce an approximate posterior $q_\phi(\mathbf{z} | \mathbf{x})$ and derive a tractable lower bound on the log-evidence.
+
+Starting from the log-marginal likelihood:
+
+$$
+\log p_\theta(\mathbf{x}) = \log \int p_\theta(\mathbf{x}, \mathbf{z}) \, d\mathbf{z}
+$$
+
+Multiplying and dividing by the approximate posterior $q_\phi(\mathbf{z} | \mathbf{x})$:
+
+$$
+\log p_\theta(\mathbf{x}) = \log \int \frac{p_\theta(\mathbf{x}, \mathbf{z})}{q_\phi(\mathbf{z} | \mathbf{x})} \, q_\phi(\mathbf{z} | \mathbf{x}) \, d\mathbf{z}
+$$
+
+Applying Jensen's inequality ($\log \mathbb{E}[f(z)] \geq \mathbb{E}[\log f(z)]$ for concave $\log$):
+
+$$
+\log p_\theta(\mathbf{x}) \geq \mathbb{E}_{q_\phi(\mathbf{z} | \mathbf{x})} \left[ \log \frac{p_\theta(\mathbf{x}, \mathbf{z})}{q_\phi(\mathbf{z} | \mathbf{x})} \right] = \mathcal{L}(\theta, \phi; \mathbf{x})
+$$
+
+Decomposing the joint probability $p_\theta(\mathbf{x}, \mathbf{z}) = p_\theta(\mathbf{x} | \mathbf{z}) p(\mathbf{z})$:
+
+$$
+\mathcal{L}(\theta, \phi; \mathbf{x}) = \underbrace{\mathbb{E}_{q_\phi(\mathbf{z} | \mathbf{x})} \left[ \log p_\theta(\mathbf{x} | \mathbf{z}) \right]}_{\text{Reconstruction Term}} - \underbrace{D_{\text{KL}}\left( q_\phi(\mathbf{z} | \mathbf{x}) \| p(\mathbf{z}) \right)}_{\text{Regularization Term}}
+$$
+
+The gap between the true log-evidence and the ELBO is exactly the KL divergence between the approximate and true posteriors:
+
+$$
+\log p_\theta(\mathbf{x}) = \mathcal{L}(\theta, \phi; \mathbf{x}) + D_{\text{KL}}\left( q_\phi(\mathbf{z} | \mathbf{x}) \| p_\theta(\mathbf{z} | \mathbf{x}) \right)
+$$
+
+Since $D_{\text{KL}} \geq 0$, maximizing the ELBO simultaneously maximizes the data likelihood and minimizes the approximation gap.
+
+#### 8.2.2 Expectation-Maximization (EM) Algorithm
+
+The classical EM algorithm is the foundational approach for maximum likelihood estimation in latent variable models:
+
+**E-Step (Expectation):** Compute the expected sufficient statistics under the current posterior estimate:
+
+$$
+Q(\theta | \theta^{(t)}) = \mathbb{E}_{p(\mathbf{z} | \mathbf{x}, \theta^{(t)})} \left[ \log p_\theta(\mathbf{x}, \mathbf{z}) \right]
+$$
+
+**M-Step (Maximization):** Update parameters to maximize the expected complete-data log-likelihood:
+
+$$
+\theta^{(t+1)} = \arg\max_\theta \, Q(\theta | \theta^{(t)})
+$$
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    EM ALGORITHM vs. VAE COMPARISON                          │
+│                                                                             │
+│  Classical EM:                                                              │
+│   E-Step: Compute exact posterior p(z|x,θ) ← Only possible for simple      │
+│   M-Step: Maximize Q(θ|θ^t)                   conjugate models             │
+│                                                                             │
+│  Variational EM (VAE):                                                      │
+│   E-Step: Learn approximate posterior q_φ(z|x) via neural encoder           │
+│   M-Step: Maximize ELBO w.r.t. decoder θ                                   │
+│   ──► Both steps via single gradient descent on ELBO!                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 8.3 Variational Autoencoders (VAEs)
+
+The Variational Autoencoder (Kingma & Welling, 2014) operationalizes the latent variable framework by parameterizing both the approximate posterior $q_\phi(\mathbf{z} | \mathbf{x})$ (encoder) and the likelihood $p_\theta(\mathbf{x} | \mathbf{z})$ (decoder) as deep neural networks.
+
+#### 8.3.1 Encoder-Decoder Architecture & Amortized Inference
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       VAE ARCHITECTURE                                      │
+│                                                                             │
+│  Input x ──► [Encoder Network q_φ(z|x)] ──► μ_φ(x), σ²_φ(x)              │
+│                                                    │                        │
+│                                                    ▼                        │
+│                                    z = μ + σ ⊙ ε,  ε ~ N(0, I)            │
+│                                    (Reparameterization Trick)               │
+│                                                    │                        │
+│                                                    ▼                        │
+│                              [Decoder Network p_θ(x|z)] ──► x̂ (Recon.)    │
+│                                                                             │
+│  Loss = -E_q[log p_θ(x|z)] + D_KL(q_φ(z|x) ‖ p(z))                       │
+│         ────────────────────   ──────────────────────────                    │
+│         Reconstruction Loss    KL Regularization                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Amortized Inference:** Unlike classical variational inference, which optimizes variational parameters per data point, VAEs learn a single encoder network $q_\phi(\mathbf{z} | \mathbf{x})$ that maps **any** input $\mathbf{x}$ to its approximate posterior in a single forward pass. The encoder outputs the parameters of a diagonal Gaussian:
+
+$$
+q_\phi(\mathbf{z} | \mathbf{x}) = \mathcal{N}\left(\mathbf{z}; \boldsymbol{\mu}_\phi(\mathbf{x}), \text{diag}(\boldsymbol{\sigma}^2_\phi(\mathbf{x}))\right)
+$$
+
+#### 8.3.2 The Reparameterization Trick
+
+Sampling $\mathbf{z} \sim q_\phi(\mathbf{z} | \mathbf{x})$ introduces a non-differentiable stochastic node in the computation graph. The **reparameterization trick** expresses sampling as a deterministic differentiable transformation of a noise variable:
+
+$$
+\mathbf{z} = \boldsymbol{\mu}_\phi(\mathbf{x}) + \boldsymbol{\sigma}_\phi(\mathbf{x}) \odot \boldsymbol{\epsilon}, \qquad \boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})
+$$
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│              REPARAMETERIZATION TRICK: GRADIENT FLOW                        │
+│                                                                             │
+│  Without Reparameterization:                                                │
+│    x ──► Encoder ──► [Sample z ~ q(z|x)] ──► Decoder ──► Loss              │
+│                            ✗ Non-differentiable!                            │
+│                                                                             │
+│  With Reparameterization:                                                   │
+│    x ──► Encoder ──► (μ, σ) ──► z = μ + σ⊙ε ──► Decoder ──► Loss          │
+│                   ▲                    ▲                                     │
+│                   │                    │                                     │
+│              Differentiable      ε ~ N(0,I)                                 │
+│              w.r.t. φ           (Fixed noise,                               │
+│                                  independent of φ)                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+This shifts stochasticity from the network parameters to an external noise source $\boldsymbol{\epsilon}$, enabling standard backpropagation through the sampling operation.
+
+#### 8.3.3 VAE Loss Function: Reconstruction + KL Divergence
+
+The VAE training objective maximizes the ELBO, equivalently minimizing:
+
+$$
+\mathcal{L}_{\text{VAE}} = -\mathbb{E}_{q_\phi(\mathbf{z} | \mathbf{x})} \left[ \log p_\theta(\mathbf{x} | \mathbf{z}) \right] + D_{\text{KL}}\left( q_\phi(\mathbf{z} | \mathbf{x}) \| p(\mathbf{z}) \right)
+$$
+
+**Reconstruction Term** (data fidelity): For continuous data with a Gaussian decoder, this reduces to the mean squared error. For discrete/binary data, it reduces to the binary cross-entropy:
+
+$$
+-\mathbb{E}_{q_\phi} \left[ \log p_\theta(\mathbf{x} | \mathbf{z}) \right] \approx \| \mathbf{x} - \hat{\mathbf{x}} \|_2^2 \quad \text{(Gaussian decoder)}
+$$
+
+**KL Divergence Term** (regularization): When both $q_\phi(\mathbf{z} | \mathbf{x})$ and $p(\mathbf{z})$ are Gaussian, the KL divergence has a closed-form analytical solution:
+
+$$
+D_{\text{KL}}\left( \mathcal{N}(\boldsymbol{\mu}, \boldsymbol{\sigma}^2) \| \mathcal{N}(\mathbf{0}, \mathbf{I}) \right) = \frac{1}{2} \sum_{j=1}^{d} \left( \mu_j^2 + \sigma_j^2 - \log \sigma_j^2 - 1 \right)
+$$
+
+#### 8.3.4 Posterior Collapse & Mitigation Strategies
+
+**Posterior collapse** occurs when the approximate posterior $q_\phi(\mathbf{z} | \mathbf{x})$ collapses to the prior $p(\mathbf{z}) = \mathcal{N}(\mathbf{0}, \mathbf{I})$, causing the KL divergence term to reach zero. In this regime, the decoder ignores the latent variable entirely and the model degenerates into an unconditional generative model.
+
+**Cause:** When the decoder is sufficiently powerful (e.g., autoregressive), it can model $p(\mathbf{x})$ independently of $\mathbf{z}$, making the latent code uninformative.
+
+**Mitigation strategies:**
+
+- **KL Annealing (Warm-Up):** Linearly anneal the weight of the KL term from 0 to 1 during early training epochs using $\beta$-weighting: $\mathcal{L} = -\mathbb{E}[\log p_\theta(\mathbf{x} | \mathbf{z})] + \beta \cdot D_{\text{KL}}$
+- **Free Bits:** Enforce a minimum information rate per latent dimension: $D_{\text{KL}}^{(j)} \geq \lambda$ for each dimension $j$
+- **$\boldsymbol\beta$-VAE:** Use $\beta > 1$ to encourage disentangled latent representations at the cost of reconstruction quality
+
+---
+
+### 8.4 Generative Adversarial Networks (GANs)
+
+GANs (Goodfellow et al., 2014) bypass explicit density estimation entirely by framing generation as a two-player adversarial game between a **Generator** $G_\theta$ and a **Discriminator** $D_\phi$.
+
+#### 8.4.1 The Minimax Game Formulation
+
+$$
+\min_G \max_D \, V(D, G) = \mathbb{E}_{\mathbf{x} \sim p_{\text{data}}(\mathbf{x})} \left[ \log D(\mathbf{x}) \right] + \mathbb{E}_{\mathbf{z} \sim p(\mathbf{z})} \left[ \log(1 - D(G(\mathbf{z}))) \right]
+$$
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          GAN ARCHITECTURE                                   │
+│                                                                             │
+│                    z ~ N(0,I)                                               │
+│                        │                                                    │
+│                        ▼                                                    │
+│                  ┌───────────┐                                              │
+│                  │ Generator │ ──► x_fake = G(z)                            │
+│                  │   G_θ     │                │                              │
+│                  └───────────┘                │                              │
+│                                               ▼                             │
+│         x_real ~ p_data ───────────►  ┌───────────────┐                     │
+│                                       │ Discriminator │ ──► D(x) ∈ [0, 1]  │
+│                                       │     D_φ       │    Real vs. Fake    │
+│                                       └───────────────┘                     │
+│                                                                             │
+│  Discriminator Goal: Maximize D(x_real), Minimize D(G(z))                   │
+│  Generator Goal: Maximize D(G(z)) (fool the discriminator)                  │
+│                                                                             │
+│  At Nash Equilibrium: D(x) = 1/2 ∀x,  p_G(x) = p_data(x)                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 8.4.2 Training Dynamics & Nash Equilibrium
+
+**Optimal Discriminator:** For a fixed generator $G$, the optimal discriminator is:
+
+$$
+D^*_G(\mathbf{x}) = \frac{p_{\text{data}}(\mathbf{x})}{p_{\text{data}}(\mathbf{x}) + p_G(\mathbf{x})}
+$$
+
+**Global Optimum:** Substituting $D^*_G$ back into the value function yields:
+
+$$
+V(G, D^*_G) = -\log 4 + 2 \cdot D_{\text{JS}}\left( p_{\text{data}} \| p_G \right)
+$$
+
+where $D_{\text{JS}}$ is the **Jensen-Shannon divergence**. The minimum is achieved when $p_G = p_{\text{data}}$, yielding $V = -\log 4$ and $D^*(\mathbf{x}) = \frac{1}{2}$ everywhere.
+
+**Alternating Gradient Updates:**
+
+1. **Discriminator step:** $\phi \leftarrow \phi + \eta \nabla_\phi V(D_\phi, G_\theta)$
+2. **Generator step:** $\theta \leftarrow \theta - \eta \nabla_\theta V(D_\phi, G_\theta)$
+
+In practice, the generator maximizes $\mathbb{E}[\log D(G(\mathbf{z}))]$ (non-saturating loss) instead of minimizing $\mathbb{E}[\log(1 - D(G(\mathbf{z})))]$ to avoid vanishing gradients when $D$ is near-optimal.
+
+#### 8.4.3 Mode Collapse & Wasserstein Distance (WGAN)
+
+**Mode collapse** occurs when the generator produces limited diversity, mapping multiple latent codes to the same output mode while ignoring large regions of the true data distribution.
+
+**Root cause:** The JS divergence becomes uninformative (constant) when $p_{\text{data}}$ and $p_G$ have disjoint supports, which commonly occurs in high-dimensional spaces.
+
+**WGAN (Arjovsky et al., 2017)** replaces the JS divergence with the **Earth Mover's Distance (Wasserstein-1 distance)**:
+
+$$
+W_1(p_{\text{data}}, p_G) = \inf_{\gamma \in \Pi(p_{\text{data}}, p_G)} \mathbb{E}_{(\mathbf{x}, \mathbf{y}) \sim \gamma} \left[ \| \mathbf{x} - \mathbf{y} \| \right]
+$$
+
+By the Kantorovich-Rubinstein duality, this is equivalent to:
+
+$$
+W_1(p_{\text{data}}, p_G) = \sup_{\|f\|_L \leq 1} \left( \mathbb{E}_{\mathbf{x} \sim p_{\text{data}}} [f(\mathbf{x})] - \mathbb{E}_{\mathbf{x} \sim p_G} [f(\mathbf{x})] \right)
+$$
+
+where the supremum is over all 1-Lipschitz functions $f$. The discriminator (called a "critic" in WGAN) is constrained to be 1-Lipschitz via weight clipping or gradient penalty (WGAN-GP):
+
+$$
+\mathcal{L}_{\text{GP}} = \lambda \, \mathbb{E}_{\hat{\mathbf{x}} \sim p_{\hat{\mathbf{x}}}} \left[ \left( \| \nabla_{\hat{\mathbf{x}}} D(\hat{\mathbf{x}}) \|_2 - 1 \right)^2 \right]
+$$
+
+where $\hat{\mathbf{x}}$ is sampled uniformly along straight lines between pairs of real and generated samples.
+
+---
+
+### 8.5 Normalizing Flows
+
+Normalizing flows construct complex distributions by composing a sequence of invertible, differentiable transformations applied to a simple base distribution.
+
+#### 8.5.1 Change of Variables Formula & Jacobian Determinant
+
+Given an invertible transformation $f: \mathbb{R}^d \to \mathbb{R}^d$ mapping $\mathbf{z} \sim p_Z(\mathbf{z})$ to $\mathbf{x} = f(\mathbf{z})$, the density of $\mathbf{x}$ is given by the **change of variables** formula:
+
+$$
+p_X(\mathbf{x}) = p_Z\left(f^{-1}(\mathbf{x})\right) \left| \det \frac{\partial f^{-1}}{\partial \mathbf{x}} \right| = p_Z\left(f^{-1}(\mathbf{x})\right) \left| \det \mathbf{J}_{f^{-1}}(\mathbf{x}) \right|
+$$
+
+For a composition of $K$ invertible transformations $f = f_K \circ f_{K-1} \circ \cdots \circ f_1$:
+
+$$
+\log p_X(\mathbf{x}) = \log p_Z(\mathbf{z}_0) - \sum_{k=1}^{K} \log \left| \det \mathbf{J}_{f_k}(\mathbf{z}_{k-1}) \right|
+$$
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    NORMALIZING FLOW PIPELINE                                │
+│                                                                             │
+│  z_0 ~ N(0,I) ──► [f_1] ──► z_1 ──► [f_2] ──► z_2 ──► ... ──► [f_K] ──► x│
+│  (Simple Base)   (Invertible)       (Invertible)              (Complex     │
+│                  (Differentiable)   (Differentiable)           Distribution)│
+│                                                                             │
+│  Key Requirement: Each f_k must be:                                         │
+│    1. Invertible (for sampling: z → x via forward pass)                     │
+│    2. Have tractable Jacobian determinant (for training: x → log p(x))      │
+│                                                                             │
+│  Training: Maximize exact log-likelihood log p(x)                           │
+│  Sampling: Draw z ~ p(z), compute x = f_K(f_{K-1}(...f_1(z)))              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 8.5.2 Architectural Constraints: Planar, Radial & Autoregressive Flows
+
+Computing the full Jacobian determinant is $O(d^3)$. Practical flow architectures exploit structured transformations with $O(d)$ determinant computation:
+
+**Planar Flows:** Apply hyperplane contractions/expansions:
+
+$$
+f(\mathbf{z}) = \mathbf{z} + \mathbf{u} \, h(\mathbf{w}^T \mathbf{z} + b)
+$$
+
+$$
+\left| \det \mathbf{J}_f \right| = \left| 1 + \mathbf{u}^T h'(\mathbf{w}^T \mathbf{z} + b) \mathbf{w} \right|
+$$
+
+**Autoregressive Flows (MAF / IAF):** Exploit triangular Jacobian structure where each output dimension depends only on previous inputs:
+
+$$
+x_i = \tau(z_i; \, h_i(\mathbf{x}_{1:i-1}))
+$$
+
+The Jacobian is lower-triangular, so the determinant is simply the product of diagonal entries:
+
+$$
+\det \mathbf{J} = \prod_{i=1}^{d} \frac{\partial x_i}{\partial z_i}
+$$
+
+**RealNVP (Coupling Layers):** Partition dimensions into two groups and apply affine transformations:
+
+$$
+\mathbf{x}_{1:d/2} = \mathbf{z}_{1:d/2}, \qquad \mathbf{x}_{d/2+1:d} = \mathbf{z}_{d/2+1:d} \odot \exp(s(\mathbf{z}_{1:d/2})) + t(\mathbf{z}_{1:d/2})
+$$
+
+---
+
+### 8.6 Diffusion Models: Denoising Diffusion Probabilistic Models (DDPMs)
+
+Diffusion models (Sohl-Dickstein et al., 2015; Ho et al., 2020) define a generative process by learning to reverse a gradual noising (diffusion) process. They have emerged as the dominant generative paradigm, surpassing GANs in image quality, diversity, and training stability.
+
+#### 8.6.1 The Forward Diffusion Process (Noise Schedule)
+
+The **forward process** $q$ progressively corrupts data $\mathbf{x}_0 \sim q(\mathbf{x}_0)$ by adding small amounts of Gaussian noise over $T$ timesteps according to a variance schedule $\{\beta_t\}_{t=1}^T$ where $\beta_t \in (0, 1)$:
+
+$$
+q(\mathbf{x}_t | \mathbf{x}_{t-1}) = \mathcal{N}\left(\mathbf{x}_t; \sqrt{1 - \beta_t} \, \mathbf{x}_{t-1}, \beta_t \mathbf{I}\right)
+$$
+
+The full forward trajectory is a Markov chain:
+
+$$
+q(\mathbf{x}_{1:T} | \mathbf{x}_0) = \prod_{t=1}^{T} q(\mathbf{x}_t | \mathbf{x}_{t-1})
+$$
+
+**Closed-Form Sampling at Arbitrary Timestep:** Defining $\alpha_t = 1 - \beta_t$ and $\bar{\alpha}_t = \prod_{s=1}^{t} \alpha_s$, we can sample $\mathbf{x}_t$ directly from $\mathbf{x}_0$ without iterating through intermediate steps:
+
+$$
+q(\mathbf{x}_t | \mathbf{x}_0) = \mathcal{N}\left(\mathbf{x}_t; \sqrt{\bar{\alpha}_t} \, \mathbf{x}_0, (1 - \bar{\alpha}_t) \mathbf{I}\right)
+$$
+
+$$
+\mathbf{x}_t = \sqrt{\bar{\alpha}_t} \, \mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t} \, \boldsymbol{\epsilon}, \qquad \boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})
+$$
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    FORWARD DIFFUSION PROCESS                                │
+│                                                                             │
+│   x_0 (Clean Data)                                      x_T ~ N(0, I)      │
+│                                                          (Pure Noise)       │
+│    ┌───┐   q(x_1|x_0)   ┌───┐   q(x_2|x_1)   ┌───┐          ┌───┐       │
+│    │   │ ─────────────►  │   │ ─────────────►  │   │  ···  ►  │   │       │
+│    │x_0│   +√β₁ noise    │x_1│   +√β₂ noise    │x_2│          │x_T│       │
+│    │   │                 │   │                  │   │          │   │       │
+│    └───┘                 └───┘                  └───┘          └───┘       │
+│                                                                             │
+│   Signal strength: √ᾱ_t → 0  as  t → T                                    │
+│   Noise strength:  √(1-ᾱ_t) → 1  as  t → T                               │
+│                                                                             │
+│   At t=T: x_T is approximately isotropic Gaussian noise                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 8.6.2 The Reverse Denoising Process
+
+The **reverse process** $p_\theta$ learns to denoise, transforming noise back into data. Each reverse step is parameterized as a Gaussian:
+
+$$
+p_\theta(\mathbf{x}_{t-1} | \mathbf{x}_t) = \mathcal{N}\left(\mathbf{x}_{t-1}; \boldsymbol{\mu}_\theta(\mathbf{x}_t, t), \sigma_t^2 \mathbf{I}\right)
+$$
+
+The full reverse generative process:
+
+$$
+p_\theta(\mathbf{x}_{0:T}) = p(\mathbf{x}_T) \prod_{t=1}^{T} p_\theta(\mathbf{x}_{t-1} | \mathbf{x}_t)
+$$
+
+The **posterior of the forward process** $q(\mathbf{x}_{t-1} | \mathbf{x}_t, \mathbf{x}_0)$ is tractable (Bayes' rule on Gaussians) and serves as the ground-truth target for the learned reverse transitions:
+
+$$
+q(\mathbf{x}_{t-1} | \mathbf{x}_t, \mathbf{x}_0) = \mathcal{N}\left(\mathbf{x}_{t-1}; \tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t, \mathbf{x}_0), \tilde{\beta}_t \mathbf{I}\right)
+$$
+
+where:
+
+$$
+\tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t, \mathbf{x}_0) = \frac{\sqrt{\bar{\alpha}_{t-1}} \beta_t}{1 - \bar{\alpha}_t} \mathbf{x}_0 + \frac{\sqrt{\alpha_t}(1 - \bar{\alpha}_{t-1})}{1 - \bar{\alpha}_t} \mathbf{x}_t
+$$
+
+$$
+\tilde{\beta}_t = \frac{1 - \bar{\alpha}_{t-1}}{1 - \bar{\alpha}_t} \beta_t
+$$
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    REVERSE DENOISING PROCESS                                │
+│                                                                             │
+│   x_T ~ N(0, I)                                          x_0 (Generated)   │
+│    (Pure Noise)                                            (Clean Sample)   │
+│    ┌───┐  p_θ(x_{T-1}|x_T)  ┌───┐  p_θ(x_{T-2}|x_{T-1})         ┌───┐   │
+│    │   │ ◄─────────────────  │   │ ◄─────────────────────  ···  ◄  │   │   │
+│    │x_T│  Neural Net μ_θ     │x  │  Neural Net μ_θ                 │x_0│   │
+│    │   │                     │T-1│                                  │   │   │
+│    └───┘                     └───┘                                  └───┘   │
+│                                                                             │
+│   The neural network ε_θ(x_t, t) predicts the noise ε added at step t     │
+│   μ_θ is derived from the noise prediction:                                 │
+│   μ_θ(x_t, t) = 1/√α_t · (x_t - β_t/√(1-ᾱ_t) · ε_θ(x_t, t))           │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 8.6.3 Training Objective: Simplified Denoising Loss
+
+The variational bound on the negative log-likelihood decomposes into a sum of KL divergences between forward and reverse Gaussians at each timestep. Ho et al. (2020) showed that a **simplified objective** — training a neural network $\boldsymbol{\epsilon}_\theta$ to predict the noise $\boldsymbol{\epsilon}$ added at each step — yields superior sample quality:
+
+$$
+\mathcal{L}_{\text{simple}} = \mathbb{E}_{t \sim \mathcal{U}(1,T), \, \mathbf{x}_0 \sim q(\mathbf{x}_0), \, \boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})} \left[ \| \boldsymbol{\epsilon} - \boldsymbol{\epsilon}_\theta(\mathbf{x}_t, t) \|^2 \right]
+$$
+
+where $\mathbf{x}_t = \sqrt{\bar{\alpha}_t} \, \mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t} \, \boldsymbol{\epsilon}$.
+
+The predicted mean of the reverse process is then:
+
+$$
+\boldsymbol{\mu}_\theta(\mathbf{x}_t, t) = \frac{1}{\sqrt{\alpha_t}} \left( \mathbf{x}_t - \frac{\beta_t}{\sqrt{1 - \bar{\alpha}_t}} \boldsymbol{\epsilon}_\theta(\mathbf{x}_t, t) \right)
+$$
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    DDPM TRAINING ALGORITHM                                   │
+│                                                                             │
+│  repeat:                                                                    │
+│    1. Sample x_0 ~ q(x_0)  (draw from training dataset)                    │
+│    2. Sample t ~ Uniform({1, ..., T})                                       │
+│    3. Sample ε ~ N(0, I)                                                    │
+│    4. Compute x_t = √ᾱ_t · x_0 + √(1-ᾱ_t) · ε                           │
+│    5. Gradient step on: ∇_θ ‖ε - ε_θ(x_t, t)‖²                           │
+│  until converged                                                            │
+│                                                                             │
+│  DDPM SAMPLING ALGORITHM                                                    │
+│                                                                             │
+│  1. Sample x_T ~ N(0, I)                                                    │
+│  2. for t = T, T-1, ..., 1:                                                │
+│       z ~ N(0,I) if t > 1, else z = 0                                      │
+│       x_{t-1} = 1/√α_t · (x_t - β_t/√(1-ᾱ_t) · ε_θ(x_t, t)) + σ_t · z  │
+│  3. return x_0                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 8.6.4 The Noise Schedule: Linear vs. Cosine
+
+**Linear Schedule (Ho et al., 2020):** $\beta_t$ increases linearly from $\beta_1 = 10^{-4}$ to $\beta_T = 0.02$ over $T = 1000$ steps. This causes $\bar{\alpha}_t$ to decay rapidly, destroying signal information too quickly at early timesteps and wasting capacity on nearly pure noise at late timesteps.
+
+**Cosine Schedule (Nichol & Dhariwal, 2021):** Defines $\bar{\alpha}_t$ directly using a cosine function to achieve a more gradual signal decay:
+
+$$
+\bar{\alpha}_t = \frac{f(t)}{f(0)}, \qquad f(t) = \cos\left(\frac{t/T + s}{1 + s} \cdot \frac{\pi}{2}\right)^2
+$$
+
+where $s = 0.008$ is a small offset to prevent $\beta_t$ from being too small near $t = 0$.
+
+```text
+Signal Strength √ᾱ_t
+    ^
+  1 |█████
+    |     █████
+    |          ████                    Cosine Schedule (gradual)
+    |              ████
+    |                  ████
+    |                      ████
+    |  █████                   ████
+    |       █████                  ██
+    |            ████                █
+    |                ██               █
+    |                  █  Linear       █
+    |                   █ Schedule      █
+    |                    █ (too fast)    █
+  0 └────────────────────█───────────────█──────────────────► t
+    0                                                    T=1000
+```
+
+---
+
+### 8.7 Score-Based Generative Models & Stochastic Differential Equations (SDEs)
+
+Score-based models (Song & Ermon, 2019) provide an alternative mathematical framework for diffusion-style generation that unifies discrete-step DDPMs and continuous-time processes.
+
+#### 8.7.1 Score Function & Score Matching
+
+The **score function** is the gradient of the log-density with respect to the data:
+
+$$
+\mathbf{s}_\theta(\mathbf{x}) = \nabla_{\mathbf{x}} \log p_\theta(\mathbf{x})
+$$
+
+The score function points in the direction of increasing data density, providing a gradient field that can guide samples toward high-probability regions without computing the normalizing constant $Z$.
+
+**Denoising Score Matching:** A neural network $\mathbf{s}_\theta(\mathbf{x}, \sigma)$ is trained to estimate the score of noise-perturbed data distributions $p_\sigma(\mathbf{x}) = \int p_{\text{data}}(\mathbf{x}') \mathcal{N}(\mathbf{x}; \mathbf{x}', \sigma^2 \mathbf{I}) d\mathbf{x}'$:
+
+$$
+\mathcal{L}_{\text{DSM}} = \mathbb{E}_{\sigma \sim p(\sigma)} \left[ \lambda(\sigma) \, \mathbb{E}_{\mathbf{x}_0} \, \mathbb{E}_{\mathbf{x} | \mathbf{x}_0} \left[ \left\| \mathbf{s}_\theta(\mathbf{x}, \sigma) - \nabla_{\mathbf{x}} \log q_\sigma(\mathbf{x} | \mathbf{x}_0) \right\|_2^2 \right] \right]
+$$
+
+For Gaussian perturbation, $\nabla_{\mathbf{x}} \log q_\sigma(\mathbf{x} | \mathbf{x}_0) = -\frac{\mathbf{x} - \mathbf{x}_0}{\sigma^2} = -\frac{\boldsymbol{\epsilon}}{\sigma}$, directly connecting score matching to the DDPM noise-prediction objective.
+
+#### 8.7.2 Langevin Dynamics Sampling
+
+Given a learned score function $\mathbf{s}_\theta(\mathbf{x})$, samples can be generated via **Langevin Monte Carlo** dynamics:
+
+$$
+\mathbf{x}_{i+1} = \mathbf{x}_i + \frac{\eta}{2} \nabla_{\mathbf{x}} \log p(\mathbf{x}_i) + \sqrt{\eta} \, \mathbf{z}_i, \qquad \mathbf{z}_i \sim \mathcal{N}(\mathbf{0}, \mathbf{I})
+$$
+
+As step size $\eta \to 0$ and iteration count $\to \infty$, the distribution of $\mathbf{x}_i$ converges to $p(\mathbf{x})$ under mild regularity conditions. In practice, **annealed Langevin dynamics** uses a decreasing sequence of noise levels $\sigma_1 > \sigma_2 > \cdots > \sigma_L$ to improve convergence.
+
+#### 8.7.3 Continuous-Time SDE Formulation (Song et al.)
+
+Song et al. (2021) unified DDPMs and score-based models under a single framework of **Stochastic Differential Equations (SDEs)**. The forward diffusion process is described by:
+
+$$
+d\mathbf{x} = \mathbf{f}(\mathbf{x}, t) \, dt + g(t) \, d\mathbf{w}
+$$
+
+where $\mathbf{f}(\mathbf{x}, t)$ is the drift coefficient, $g(t)$ is the diffusion coefficient, and $\mathbf{w}$ is a standard Wiener process (Brownian motion).
+
+**Reverse-Time SDE (Anderson, 1982):** The time-reversed process is also an SDE:
+
+$$
+d\mathbf{x} = \left[ \mathbf{f}(\mathbf{x}, t) - g(t)^2 \nabla_{\mathbf{x}} \log p_t(\mathbf{x}) \right] dt + g(t) \, d\bar{\mathbf{w}}
+$$
+
+where $\bar{\mathbf{w}}$ is a reverse-time Wiener process.
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│              UNIFYING FRAMEWORK: DDPM ←→ SCORE SDE                          │
+│                                                                             │
+│  DDPM (Ho et al., 2020):         Discrete steps t = 1, ..., T              │
+│    Forward: x_t = √ᾱ_t x_0 + √(1-ᾱ_t) ε                                 │
+│    Model:   ε_θ(x_t, t) predicts noise ε                                   │
+│                                                                             │
+│  Score SDE (Song et al., 2021):  Continuous time t ∈ [0, T]                │
+│    Forward: dx = f(x,t)dt + g(t)dw                                         │
+│    Model:   s_θ(x, t) ≈ ∇_x log p_t(x)                                   │
+│                                                                             │
+│  Connection: ε_θ(x_t, t) = -√(1-ᾱ_t) · s_θ(x_t, t)                      │
+│                                                                             │
+│  VP-SDE ←→ DDPM:    f(x,t) = -½β(t)x,    g(t) = √β(t)                    │
+│  VE-SDE ←→ SMLD:    f(x,t) = 0,           g(t) = √(dσ²/dt)               │
+│  Sub-VP SDE:         f(x,t) = -½β(t)x,    g(t) = √(β(t)(1-e^{-2∫β}))     │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+The SDE framework enables:
+- **Probability Flow ODE:** A deterministic ODE with identical marginal distributions, enabling exact likelihood computation via the instantaneous change of variables formula.
+- **Flexible Samplers:** DDIM (Song et al., 2020), DPM-Solver, and other accelerated samplers that reduce the number of function evaluations from $T \sim 1000$ to $\sim 20$–$50$ steps.
+
+---
+
+### 8.8 Latent Diffusion Models (LDMs) & Stable Diffusion Architecture
+
+Latent Diffusion Models (Rombach et al., 2022) address the computational bottleneck of running diffusion in high-dimensional pixel space by operating in a compressed latent space.
+
+#### 8.8.1 Perceptual Compression via Pretrained Autoencoders
+
+An autoencoder is first trained to learn a perceptually equivalent, low-dimensional latent representation:
+
+**Encoder:** $\mathbf{z} = \mathcal{E}(\mathbf{x})$ maps an image $\mathbf{x} \in \mathbb{R}^{H \times W \times 3}$ to a latent $\mathbf{z} \in \mathbb{R}^{h \times w \times c}$ where the spatial downsampling factor $f = H/h = W/w$ is typically $f = 8$.
+
+**Decoder:** $\hat{\mathbf{x}} = \mathcal{D}(\mathbf{z})$ reconstructs the image from the latent representation.
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│               LATENT DIFFUSION MODEL (LDM) ARCHITECTURE                     │
+│                                                                             │
+│  TRAINING:                                                                  │
+│                                                                             │
+│  Image x ──► [Encoder E] ──► z_0 ──► [Forward Diffusion in Latent Space]   │
+│  (512×512×3)               (64×64×4)  z_t = √ᾱ_t·z_0 + √(1-ᾱ_t)·ε       │
+│                                              │                              │
+│                                              ▼                              │
+│                     Text ──► [CLIP/T5] ──► [U-Net ε_θ(z_t, t, c)]         │
+│                     Prompt    Encoder        Cross-Attention                │
+│                                              │                              │
+│                                              ▼                              │
+│                                    Loss = ‖ε - ε_θ(z_t, t, c)‖²           │
+│                                                                             │
+│  SAMPLING:                                                                  │
+│                                                                             │
+│  z_T ~ N(0,I) ──► [Reverse Diffusion] ──► z_0 ──► [Decoder D] ──► Image   │
+│  (64×64×4)         T denoising steps       (64×64×4)              (512×512) │
+│                    in latent space!                                          │
+│                                                                             │
+│  Computational Saving: 64×64 vs 512×512 = 64× fewer pixels!                │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+The autoencoder is trained with a combination of perceptual loss (LPIPS), patch-based adversarial loss, and optional KL regularization on the latent distribution.
+
+#### 8.8.2 Cross-Attention Conditioning (Text-to-Image)
+
+Text conditioning is injected into the U-Net denoiser via **cross-attention** layers. Given a text prompt, a pretrained language model (e.g., CLIP text encoder or T5) produces a sequence of token embeddings $\boldsymbol{\tau}_\theta(\mathbf{y}) \in \mathbb{R}^{M \times d_\tau}$.
+
+At each spatial location in the U-Net, cross-attention is computed as:
+
+$$
+\text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax}\left(\frac{\mathbf{Q} \mathbf{K}^T}{\sqrt{d}}\right) \mathbf{V}
+$$
+
+where:
+- $\mathbf{Q} = \mathbf{W}_Q^{(i)} \cdot \varphi_i(\mathbf{z}_t)$ — Query from the U-Net intermediate representation
+- $\mathbf{K} = \mathbf{W}_K^{(i)} \cdot \boldsymbol{\tau}_\theta(\mathbf{y})$ — Key from the text encoder output
+- $\mathbf{V} = \mathbf{W}_V^{(i)} \cdot \boldsymbol{\tau}_\theta(\mathbf{y})$ — Value from the text encoder output
+
+#### 8.8.3 Classifier-Free Guidance
+
+**Classifier-free guidance** (Ho & Salimans, 2022) improves conditional sample quality by jointly training conditional and unconditional models and interpolating between their predictions at inference time:
+
+$$
+\hat{\boldsymbol{\epsilon}}_\theta(\mathbf{z}_t, t, \mathbf{y}) = (1 + w) \cdot \boldsymbol{\epsilon}_\theta(\mathbf{z}_t, t, \mathbf{y}) - w \cdot \boldsymbol{\epsilon}_\theta(\mathbf{z}_t, t, \varnothing)
+$$
+
+where $w > 0$ is the **guidance scale** (typically $w = 7.5$) and $\varnothing$ denotes the null/unconditional embedding (produced by dropping the text prompt during training with probability $\sim 10\%$).
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│           CLASSIFIER-FREE GUIDANCE: TRADING DIVERSITY FOR FIDELITY          │
+│                                                                             │
+│  w = 0 (No Guidance):                                                       │
+│    Pure conditional model output                                            │
+│    ──► Maximum diversity, lower prompt adherence                            │
+│                                                                             │
+│  w = 7.5 (Standard):                                                        │
+│    Strong guidance toward text prompt                                       │
+│    ──► High fidelity to prompt, good diversity                              │
+│                                                                             │
+│  w → ∞ (Extreme Guidance):                                                  │
+│    Over-saturated, distorted images                                         │
+│    ──► Mode collapse, artifacts                                             │
+│                                                                             │
+│  ε̂ = (1+w) · ε_θ(z_t, t, y) - w · ε_θ(z_t, t, ∅)                        │
+│       ──────────────────────   ──────────────────────                        │
+│       Conditional prediction   Unconditional prediction                     │
+│                                                                             │
+│  Intuition: "Move further in the direction that the text condition          │
+│  pushes the prediction, away from the unconditional baseline"               │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 8.9 Generative Models Comparison Matrix
+
+| Property | VAE | GAN | Normalizing Flow | DDPM / Score SDE | Latent Diffusion (LDM) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Density Estimation** | Approximate (ELBO) | None (implicit) | Exact | Approximate (VLB) | Approximate (VLB) |
+| **Sample Quality** | Moderate (blurry) | High (sharp) | Moderate | State-of-the-art | State-of-the-art |
+| **Training Stability** | Stable | Unstable (mode collapse) | Stable | Very stable | Very stable |
+| **Training Objective** | $-\text{ELBO} = \text{Recon} + \text{KL}$ | Minimax adversarial | Exact $\log p(\mathbf{x})$ | $\|\boldsymbol{\epsilon} - \boldsymbol{\epsilon}_\theta\|^2$ | $\|\boldsymbol{\epsilon} - \boldsymbol{\epsilon}_\theta\|^2$ (in latent space) |
+| **Sampling Speed** | Single forward pass | Single forward pass | Single forward pass | Slow ($T \sim 1000$ steps) | Moderate ($\sim 20$–$50$ steps in latent space) |
+| **Latent Space** | Continuous, regularized | Implicit (no encoder) | Bijective mapping | No explicit latent | Compressed perceptual latent |
+| **Mode Coverage** | High (covers full dist.) | Low (mode dropping) | High | Very high | Very high |
+| **Conditioning** | Concatenation / labels | Conditional GAN (cGAN) | Conditional coupling | Cross-attention, CFG | Cross-attention, CFG |
+| **Architecture** | Encoder-Decoder | Generator-Discriminator | Invertible network | U-Net + timestep embed | Autoencoder + U-Net + text encoder |
+| **Key Limitation** | Blurry reconstructions | Training instability | Architecture constraints | Slow sampling | Autoencoder quality ceiling |
+| **Seminal Paper** | Kingma & Welling, 2014 | Goodfellow et al., 2014 | Rezende & Mohamed, 2015 | Ho et al., 2020 | Rombach et al., 2022 |
+
+---
+
+## 9. Module IX: Cross-Disciplinary Synthesis & Engineering Playbook
+
+### 9.1 Full Model Lifecycle Workflow
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -1882,7 +2658,7 @@ Gemma 4 models integrate native **Multi-Token Prediction (MTP)** drafter modules
 
 ---
 
-### 8.2 Systems Engineering Decision Flowchart
+### 9.2 Systems Engineering Decision Flowchart
 
 ```text
 Target Deployment Constraints:
@@ -1912,7 +2688,7 @@ Target Deployment Constraints:
 
 ---
 
-### 8.3 Comprehensive Glossary of Symbols & Notation
+### 9.3 Comprehensive Glossary of Symbols & Notation
 
 | Symbol | Mathematical Definition | Domain / Systems Role |
 | :--- | :--- | :--- |
@@ -1941,7 +2717,7 @@ Target Deployment Constraints:
 
 ---
 
-### 8.4 References & Primary Sources
+### 9.4 References & Primary Sources
 
 This technical compendium synthesizes theoretical principles, systems implementations, and architectural benchmarks from the following primary publications and engineering references:
 
@@ -1973,3 +2749,15 @@ This technical compendium synthesizes theoretical principles, systems implementa
    - Tensor Economics. *"LLM Inference Economics from First Principles."* [Tensor Economics Newsletter](https://www.tensoreconomics.com/p/llm-inference-economics-from-first).
    - Musings with LLMs. *"Understanding KV Cache and PagedAttention in LLMs: A Deep Dive into Efficient Inference."* [Medium](https://medium.com/my-musings-with-llms/understanding-kv-cache-and-paged-attention-in-llms-a-deep-dive-into-efficient-inference-62fa372432ce).
    - Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph E. Gonzalez, Haotong Zhang, Ion Stoica. *"Efficient Memory Management for Large Language Model Serving with PagedAttention (vLLM)."* [SOSP 2023 / arXiv:2309.06180](https://arxiv.org/abs/2309.06180).
+
+7. **Generative Models — Latent Variable Models & Diffusion Models:**
+   - Sergios Karagiannakos, Nikolas Adaloglou. *"Latent Variable Models — An Introduction to Variational Autoencoders."* [AI Summer](https://theaisummer.com/latent-variable-models/).
+   - Sergios Karagiannakos, Nikolas Adaloglou. *"An Introduction to Diffusion Models — DDPMs, Score-Based Models & SDEs."* [AI Summer](https://theaisummer.com/diffusion-models/).
+   - Diederik P. Kingma, Max Welling. *"Auto-Encoding Variational Bayes."* [ICLR 2014 / arXiv:1312.6114](https://arxiv.org/abs/1312.6114).
+   - Ian J. Goodfellow, Jean Pouget-Abadie, Mehdi Mirza, Bing Xu, David Warde-Farley, Sherjil Ozair, Aaron Courville, Yoshua Bengio. *"Generative Adversarial Nets."* [NeurIPS 2014 / arXiv:1406.2661](https://arxiv.org/abs/1406.2661).
+   - Danilo Jimenez Rezende, Shakir Mohamed. *"Variational Inference with Normalizing Flows."* [ICML 2015 / arXiv:1505.05770](https://arxiv.org/abs/1505.05770).
+   - Jonathan Ho, Ajay Jain, Pieter Abbeel. *"Denoising Diffusion Probabilistic Models."* [NeurIPS 2020 / arXiv:2006.11239](https://arxiv.org/abs/2006.11239).
+   - Yang Song, Jascha Sohl-Dickstein, Diederik P. Kingma, Abhishek Kumar, Stefano Ermon, Ben Poole. *"Score-Based Generative Modeling through Stochastic Differential Equations."* [ICLR 2021 / arXiv:2011.13456](https://arxiv.org/abs/2011.13456).
+   - Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, Björn Ommer. *"High-Resolution Image Synthesis with Latent Diffusion Models."* [CVPR 2022 / arXiv:2112.10752](https://arxiv.org/abs/2112.10752).
+   - Jonathan Ho, Tim Salimans. *"Classifier-Free Diffusion Guidance."* [NeurIPS 2022 Workshop / arXiv:2207.12598](https://arxiv.org/abs/2207.12598).
+   - Martin Arjovsky, Soumith Chintala, Léon Bottou. *"Wasserstein Generative Adversarial Networks."* [ICML 2017 / arXiv:1701.07875](https://arxiv.org/abs/1701.07875).
